@@ -1,0 +1,2587 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PostgreSQL · Manual Completo de Cero a Experto</title>
+<meta name="description" content="Manual profesional de PostgreSQL para programadores principiantes: SQL, PL/pgSQL, JDBC, transacciones y buenas prácticas.">
+
+<!-- Mermaid.js para diagramas -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+
+<style>
+/* ============================================================
+   VARIABLES GLOBALES — PALETA PROFESIONAL INSPIRADA EN AMAZON
+   ============================================================ */
+:root{
+  --navy-900:#131921;
+  --navy-800:#1f2a38;
+  --navy-700:#232F3E;
+  --navy-600:#324459;
+  --navy-500:#37475A;
+  --orange:#FF9900;
+  --orange-dark:#CC7A00;
+  --orange-light:#FFE3B3;
+  --amazon-yellow:#FEBD69;
+
+  --bg:#EFF2F6;
+  --card-bg:#FFFFFF;
+  --border:#E3E8EF;
+
+  --text:#1A1F27;
+  --text-muted:#5B6776;
+  --text-inverse:#F5F7FA;
+
+  --success:#1E7E34;
+  --success-bg:#E8F6EC;
+  --success-border:#2E9E4F;
+
+  --warning:#9A5B00;
+  --warning-bg:#FFF4E0;
+  --warning-border:#FFA733;
+
+  --danger:#B3261E;
+  --danger-bg:#FDECEA;
+  --danger-border:#E5534B;
+
+  --info:#0B5FA5;
+  --info-bg:#E6F2FB;
+  --info-border:#2196D8;
+
+  --radius-sm:6px;
+  --radius:10px;
+  --radius-lg:16px;
+
+  --shadow-sm: 0 1px 3px rgba(19,25,33,0.08);
+  --shadow: 0 4px 14px rgba(19,25,33,0.10), 0 1px 3px rgba(19,25,33,0.08);
+  --shadow-hover: 0 10px 28px rgba(19,25,33,0.18);
+
+  --sidebar-w: 300px;
+  --header-h: 64px;
+}
+
+*,*::before,*::after{ box-sizing:border-box; }
+
+html{ scroll-behavior:smooth; }
+
+body{
+  margin:0;
+  font-family:"Segoe UI", Calibri, Roboto, Arial, sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  font-size:10pt;
+  line-height:1.15;
+  -webkit-font-smoothing:antialiased;
+}
+
+a{ color:var(--orange-dark); text-decoration:none; }
+a:hover{ text-decoration:underline; }
+
+img, svg{ max-width:100%; }
+
+/* ============================================================
+   BARRA DE PROGRESO DE LECTURA
+   ============================================================ */
+#progressBar{
+  position:fixed; top:0; left:0; height:4px; width:0%;
+  background:linear-gradient(90deg,var(--orange),var(--amazon-yellow));
+  z-index:3000; transition:width .1s ease-out;
+}
+
+/* ============================================================
+   HEADER SUPERIOR
+   ============================================================ */
+.top-header{
+  position:fixed; top:0; left:0; right:0; height:var(--header-h);
+  background:var(--navy-900);
+  color:var(--text-inverse);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 18px; z-index:2000;
+  box-shadow:0 2px 10px rgba(0,0,0,.25);
+  border-bottom:3px solid var(--orange);
+}
+.brand{ display:flex; align-items:center; gap:10px; font-weight:700; }
+.brand-badge{
+  background:var(--orange); color:var(--navy-900);
+  width:34px; height:34px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14pt; font-weight:800;
+}
+.brand-text{ display:flex; flex-direction:column; line-height:1.1; }
+.brand-text strong{ font-size:12pt; letter-spacing:.3px; }
+.brand-text span{ font-size:8pt; color:var(--amazon-yellow); }
+
+.header-actions{ display:flex; align-items:center; gap:12px; }
+
+.search-box{
+  display:flex; align-items:center; gap:6px;
+  background:var(--navy-700); border:1px solid var(--navy-500);
+  border-radius:20px; padding:6px 14px; min-width:230px;
+}
+.search-box input{
+  background:transparent; border:none; outline:none;
+  color:var(--text-inverse); font-size:10pt; width:100%;
+}
+.search-box input::placeholder{ color:#9FB0C3; }
+.search-box svg{ flex-shrink:0; }
+
+.menu-toggle{
+  display:none; background:var(--orange); border:none; color:var(--navy-900);
+  width:38px; height:38px; border-radius:8px; font-size:14pt; cursor:pointer;
+  font-weight:800;
+}
+
+/* ============================================================
+   LAYOUT GENERAL
+   ============================================================ */
+.layout{ display:flex; padding-top:var(--header-h); min-height:100vh; }
+
+/* ----------------- SIDEBAR ----------------- */
+.sidebar{
+  width:var(--sidebar-w); flex-shrink:0;
+  background:var(--navy-900);
+  color:var(--text-inverse);
+  position:fixed; top:var(--header-h); bottom:0; left:0;
+  overflow-y:auto; padding:14px 0 40px;
+  border-right:1px solid var(--navy-700);
+  z-index:1500;
+}
+.sidebar::-webkit-scrollbar{ width:7px; }
+.sidebar::-webkit-scrollbar-thumb{ background:var(--navy-500); border-radius:10px; }
+
+.toc-part{ margin-bottom:4px; }
+.toc-part-title{
+  width:100%; text-align:left; background:none; border:none;
+  color:var(--amazon-yellow); font-size:9pt; font-weight:700;
+  letter-spacing:.6px; text-transform:uppercase;
+  padding:14px 18px 6px; cursor:pointer;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.toc-part-title .chev{ transition:transform .25s ease; font-size:9pt; }
+.toc-part.collapsed .chev{ transform:rotate(-90deg); }
+.toc-part ul{
+  list-style:none; margin:0; padding:0 0 6px;
+  max-height:600px; overflow:hidden; transition:max-height .3s ease;
+}
+.toc-part.collapsed ul{ max-height:0; }
+.toc-part ul li a{
+  display:block; padding:7px 18px 7px 26px; font-size:9.5pt;
+  color:#C9D4E0; border-left:3px solid transparent;
+}
+.toc-part ul li a:hover{ background:var(--navy-700); color:#fff; text-decoration:none; }
+.toc-part ul li a.active{
+  background:var(--navy-700); color:var(--orange);
+  border-left:3px solid var(--orange); font-weight:600;
+}
+
+/* ----------------- CONTENIDO PRINCIPAL ----------------- */
+.content{
+  margin-left:var(--sidebar-w);
+  width:calc(100% - var(--sidebar-w));
+  padding:28px 38px 80px;
+  max-width:1280px;
+}
+
+/* ============================================================
+   HERO / PORTADA
+   ============================================================ */
+.hero{
+  background:
+    radial-gradient(circle at 15% 20%, rgba(255,153,0,.18), transparent 45%),
+    linear-gradient(135deg,var(--navy-900), var(--navy-700) 60%, var(--navy-500));
+  color:#fff; border-radius:var(--radius-lg);
+  padding:46px 40px; margin-bottom:34px; box-shadow:var(--shadow);
+  position:relative; overflow:hidden;
+}
+.hero::after{
+  content:"🐘"; position:absolute; right:30px; bottom:-10px;
+  font-size:160px; opacity:.07;
+}
+.hero-kicker{
+  display:inline-block; background:var(--orange); color:var(--navy-900);
+  font-weight:800; font-size:9pt; padding:4px 12px; border-radius:20px;
+  letter-spacing:.5px; margin-bottom:14px;
+}
+.hero h1{
+  font-size:16pt; margin:0 0 10px; line-height:1.25; max-width:820px;
+}
+.hero p{ font-size:10.5pt; color:#D9E2EC; max-width:720px; margin:0 0 20px; }
+.hero-tags{ display:flex; flex-wrap:wrap; gap:8px; }
+.hero-tags span{
+  background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2);
+  padding:5px 12px; border-radius:20px; font-size:8.5pt;
+}
+.hero-grid{
+  display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:26px;
+}
+.hero-stat{
+  background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15);
+  border-radius:var(--radius); padding:14px; text-align:center;
+}
+.hero-stat b{ display:block; font-size:16pt; color:var(--orange); }
+.hero-stat span{ font-size:8.5pt; color:#C9D4E0; }
+
+/* ============================================================
+   TÍTULOS DE SECCIÓN / CAPÍTULOS
+   ============================================================ */
+.part-divider{
+  display:flex; align-items:center; gap:14px; margin:46px 0 20px;
+}
+.part-divider .num{
+  background:var(--navy-900); color:var(--orange); font-weight:800;
+  font-size:11pt; padding:6px 14px; border-radius:8px;
+}
+.part-divider h2{
+  font-size:14pt; color:var(--navy-900); margin:0; letter-spacing:.3px;
+  text-transform:uppercase;
+}
+.part-divider::after{
+  content:""; flex:1; height:2px;
+  background:linear-gradient(90deg,var(--orange),transparent);
+}
+
+.chapter{ scroll-margin-top:calc(var(--header-h) + 14px); margin-bottom:10px; }
+
+.chapter-header{
+  display:flex; align-items:center; gap:16px;
+  background:linear-gradient(120deg,var(--navy-900),var(--navy-700));
+  color:#fff; border-radius:var(--radius); padding:18px 24px;
+  margin-bottom:22px; box-shadow:var(--shadow);
+  border-left:6px solid var(--orange);
+}
+.chapter-header .chap-num{
+  font-size:16pt; font-weight:800; color:var(--orange);
+  background:rgba(255,255,255,.08); width:52px; height:52px;
+  border-radius:12px; display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.chapter-header h2{ font-size:14pt; margin:0; line-height:1.2; }
+.chapter-header p{ font-size:9.5pt; margin:4px 0 0; color:#C9D4E0; }
+
+h3.section-title{
+  font-size:12pt; color:var(--navy-900); margin:28px 0 12px;
+  padding-bottom:6px; border-bottom:2px solid var(--border);
+  display:flex; align-items:center; gap:8px;
+}
+h3.section-title::before{ content:"▍"; color:var(--orange); }
+
+h4.subtitle{
+  font-size:11pt; color:var(--navy-700); margin:18px 0 8px; font-weight:700;
+}
+
+p{ margin:0 0 10px; color:var(--text); }
+ul,ol{ margin:0 0 12px; padding-left:22px; }
+li{ margin-bottom:5px; }
+
+/* ============================================================
+   TARJETAS (CARDS)
+   ============================================================ */
+.card{
+  background:var(--card-bg); border-radius:var(--radius);
+  box-shadow:var(--shadow-sm); border:1px solid var(--border);
+  padding:20px 22px; margin-bottom:20px;
+  transition:box-shadow .2s ease, transform .2s ease;
+}
+.card:hover{ box-shadow:var(--shadow); }
+
+/* ============================================================
+   TABLAS
+   ============================================================ */
+.table-wrap{ overflow-x:auto; margin:14px 0; border-radius:var(--radius-sm); box-shadow:var(--shadow-sm); }
+table{
+  width:100%; border-collapse:collapse; background:#fff; font-size:9.5pt;
+}
+thead th{
+  background:var(--navy-900); color:#fff; text-align:left;
+  padding:10px 14px; font-size:9.5pt; font-weight:700;
+}
+tbody td{ padding:9px 14px; border-bottom:1px solid var(--border); vertical-align:top; }
+tbody tr:nth-child(even){ background:#F7F9FB; }
+tbody tr:hover{ background:var(--orange-light); }
+table code{ background:#eef1f5; padding:1px 5px; border-radius:4px; }
+
+/* ============================================================
+   BLOQUES DE CÓDIGO
+   ============================================================ */
+.code-block{
+  background:#0D1117; border-radius:var(--radius); overflow:hidden;
+  margin:14px 0; box-shadow:var(--shadow-sm); border:1px solid #20262e;
+}
+.code-header{
+  display:flex; align-items:center; gap:8px;
+  background:#161B22; padding:8px 14px; border-bottom:1px solid #20262e;
+}
+.code-header .dot{ width:10px; height:10px; border-radius:50%; }
+.dot.red{ background:#FF5F56; } .dot.yellow{ background:#FFBD2E; } .dot.green{ background:#27C93F; }
+.code-lang{
+  margin-left:auto; font-size:8pt; color:#8B949E;
+  text-transform:uppercase; letter-spacing:.5px; font-weight:700;
+}
+.code-block pre{
+  margin:0; padding:16px 18px; overflow-x:auto;
+}
+.code-block code{
+  font-family:"Fira Code","Consolas",monospace; font-size:9pt; color:#E6EDF3;
+  line-height:1.5; white-space:pre;
+}
+.code-block .cmt{ color:#8B949E; }
+.code-block .kw{ color:#FF9900; }
+.code-block .str{ color:#7EE787; }
+.code-block .typ{ color:#79C0FF; }
+
+/* ============================================================
+   ALERTAS / INDICADORES DE CRITICIDAD
+   ============================================================ */
+.alert{
+  display:flex; gap:12px; align-items:flex-start;
+  padding:13px 16px; border-radius:var(--radius-sm);
+  margin:16px 0; border-left:5px solid; font-size:9.5pt;
+}
+.alert .alert-icon{ font-size:13pt; line-height:1; }
+.alert strong{ display:block; font-size:9pt; letter-spacing:.4px; margin-bottom:2px; }
+
+.alert-success{ background:var(--success-bg); border-color:var(--success-border); color:#14522A; }
+.alert-warning{ background:var(--warning-bg); border-color:var(--warning-border); color:#6B4300; }
+.alert-danger{ background:var(--danger-bg); border-color:var(--danger-border); color:#7A1A14; }
+.alert-info{ background:var(--info-bg); border-color:var(--info-border); color:#063A66; }
+
+/* chip pequeño de criticidad para usar inline */
+.crit-chip{
+  display:inline-flex; align-items:center; gap:4px;
+  font-size:8pt; font-weight:700; padding:2px 8px; border-radius:10px;
+  text-transform:uppercase; letter-spacing:.3px;
+}
+.crit-chip.green{ background:var(--success-bg); color:var(--success); }
+.crit-chip.yellow{ background:var(--warning-bg); color:var(--warning); }
+.crit-chip.red{ background:var(--danger-bg); color:var(--danger); }
+.crit-chip.blue{ background:var(--info-bg); color:var(--info); }
+
+/* ============================================================
+   DIAGRAMAS (MERMAID)
+   ============================================================ */
+.diagram-card{
+  background:#fff; border:1px dashed var(--orange);
+  border-radius:var(--radius); padding:18px; margin:18px 0;
+  box-shadow:var(--shadow-sm); text-align:center;
+}
+.diagram-card .diagram-caption{
+  font-size:8.5pt; color:var(--text-muted); margin-top:8px; font-style:italic;
+}
+.mermaid{ display:flex; justify-content:center; }
+
+/* ============================================================
+   RESUMEN DE CAPÍTULO
+   ============================================================ */
+.summary-box{
+  background:linear-gradient(135deg,#FFF7EC,#FFFFFF);
+  border:1px solid var(--orange-light); border-left:6px solid var(--orange);
+  border-radius:var(--radius); padding:18px 22px; margin:24px 0;
+}
+.summary-box h4{
+  font-size:11pt; color:var(--navy-900); margin:0 0 10px;
+  display:flex; align-items:center; gap:8px;
+}
+
+/* ============================================================
+   ACTIVIDADES
+   ============================================================ */
+.activity-box{
+  background:var(--info-bg); border-radius:var(--radius);
+  border:1px solid var(--info-border); padding:18px 22px; margin:18px 0;
+}
+.activity-box h4{ color:var(--info); font-size:11pt; margin:0 0 10px; }
+.activity-box ol{ margin:0; padding-left:20px; }
+.activity-box li{ margin-bottom:8px; }
+
+/* ============================================================
+   CUESTIONARIO DE AUTOEVALUACIÓN
+   ============================================================ */
+.quiz-section{
+  background:var(--navy-900); border-radius:var(--radius-lg);
+  padding:26px 28px; margin:30px 0; color:#fff;
+}
+.quiz-section > h3{
+  color:#fff; font-size:12pt; border:none; margin-top:0;
+  display:flex; align-items:center; gap:8px;
+}
+.quiz-section > h3::before{ content:"📝"; }
+.quiz-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.quiz-item{
+  background:var(--navy-700); border-radius:var(--radius-sm);
+  padding:14px 16px; border:1px solid var(--navy-500);
+}
+.quiz-question{ font-size:9.5pt; margin:0 0 10px; display:flex; gap:8px; }
+.q-num{
+  background:var(--orange); color:var(--navy-900); font-weight:800;
+  width:20px; height:20px; border-radius:50%; font-size:8pt;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+details.quiz-answer summary{
+  cursor:pointer; list-style:none; color:var(--orange);
+  font-size:8.5pt; font-weight:700; padding:5px 12px;
+  border:1px solid var(--orange); border-radius:14px; display:inline-block;
+  user-select:none;
+}
+details.quiz-answer summary::-webkit-details-marker{ display:none; }
+details.quiz-answer[open] summary{ background:var(--orange); color:var(--navy-900); }
+details.quiz-answer p{
+  margin:10px 0 0; background:rgba(255,255,255,.07);
+  padding:10px 12px; border-radius:6px; font-size:9pt; color:#E6EDF3;
+  border-left:3px solid var(--success-border);
+}
+
+/* ============================================================
+   GLOSARIO
+   ============================================================ */
+.glossary-search{
+  display:flex; gap:8px; margin-bottom:16px;
+}
+.glossary-search input{
+  flex:1; padding:10px 14px; border-radius:20px; border:1px solid var(--border);
+  font-size:10pt; outline:none;
+}
+.glossary-search input:focus{ border-color:var(--orange); }
+.glossary-letter{
+  background:var(--navy-900); color:var(--orange); font-weight:800;
+  padding:2px 9px; border-radius:6px; font-size:9pt; margin-right:8px;
+}
+
+/* ============================================================
+   RESUMEN EJECUTIVO FINAL
+   ============================================================ */
+.exec-summary{
+  background:linear-gradient(135deg,var(--navy-900),var(--navy-700));
+  color:#fff; border-radius:var(--radius-lg); padding:30px 32px; margin:20px 0;
+}
+.exec-summary h3{ color:var(--orange); border:none; font-size:12pt; }
+.exec-list{ counter-reset:execnum; list-style:none; padding:0; margin:16px 0; }
+.exec-list li{
+  counter-increment:execnum; position:relative; padding:12px 16px 12px 46px;
+  background:rgba(255,255,255,.06); border-radius:var(--radius-sm);
+  margin-bottom:10px; font-size:9.5pt;
+}
+.exec-list li::before{
+  content:counter(execnum); position:absolute; left:12px; top:10px;
+  background:var(--orange); color:var(--navy-900); font-weight:800;
+  width:24px; height:24px; border-radius:50%; display:flex;
+  align-items:center; justify-content:center; font-size:9pt;
+}
+.final-banner{
+  text-align:center; padding:30px; margin-top:20px;
+  background:var(--orange); border-radius:var(--radius-lg); color:var(--navy-900);
+}
+.final-banner h3{ font-size:14pt; margin:0 0 6px; }
+
+/* ============================================================
+   BIBLIOGRAFÍA
+   ============================================================ */
+.biblio-list{ list-style:none; padding:0; margin:0; }
+.biblio-list li{
+  padding:10px 14px; border-bottom:1px dashed var(--border);
+  font-size:9.5pt; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+}
+.biblio-list li:last-child{ border-bottom:none; }
+.biblio-list .tag{
+  background:var(--navy-900); color:var(--orange); font-size:8pt;
+  padding:2px 9px; border-radius:10px; font-weight:700; white-space:nowrap;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.site-footer{
+  background:var(--navy-900); color:#C9D4E0; text-align:center;
+  padding:30px 20px; margin-top:50px; border-radius:var(--radius-lg);
+  font-size:9pt;
+}
+.site-footer strong{ color:#fff; }
+.site-footer .foot-orange{ color:var(--orange); }
+
+/* ============================================================
+   BOTÓN VOLVER ARRIBA
+   ============================================================ */
+#backToTop{
+  position:fixed; right:26px; bottom:26px; width:46px; height:46px;
+  border-radius:50%; background:var(--orange); color:var(--navy-900);
+  border:none; font-size:14pt; font-weight:800; cursor:pointer;
+  box-shadow:var(--shadow-hover); display:none; z-index:2500;
+  transition:transform .2s ease;
+}
+#backToTop:hover{ transform:translateY(-4px); }
+
+/* ============================================================
+   UTILIDADES / BADGES DE TIPO
+   ============================================================ */
+.badge-row{ display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 16px; }
+.badge{
+  font-size:8pt; font-weight:700; padding:4px 11px; border-radius:14px;
+  background:var(--navy-900); color:var(--orange); text-transform:uppercase; letter-spacing:.3px;
+}
+mark.search-hit{ background:var(--amazon-yellow); padding:0 2px; border-radius:3px; }
+.hidden-by-search{ display:none !important; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 980px){
+  .hero-grid{ grid-template-columns:repeat(2,1fr); }
+  .quiz-grid{ grid-template-columns:1fr; }
+  .search-box{ display:none; }
+}
+@media (max-width: 860px){
+  .menu-toggle{ display:block; }
+  .sidebar{
+    transform:translateX(-100%); transition:transform .3s ease;
+    width:280px;
+  }
+  .sidebar.open{ transform:translateX(0); box-shadow:10px 0 30px rgba(0,0,0,.3); }
+  .content{ margin-left:0; width:100%; padding:22px 16px 70px; }
+  .hero{ padding:30px 22px; }
+  .hero-grid{ grid-template-columns:repeat(2,1fr); }
+}
+
+/* ============================================================
+   IMPRESIÓN
+   ============================================================ */
+@media print{
+  .top-header, .sidebar, #backToTop, #progressBar, .menu-toggle{ display:none !important; }
+  .content{ margin-left:0; width:100%; }
+  .card, .chapter-header, .quiz-section{ box-shadow:none !important; border:1px solid #ccc; }
+  body{ background:#fff; }
+}
+</style>
+</head>
+<body>
+
+<!-- BARRA DE PROGRESO -->
+<div id="progressBar"></div>
+
+<!-- HEADER -->
+<header class="top-header">
+  <div class="brand">
+    <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú">☰</button>
+    <div class="brand-badge">🐘</div>
+    <div class="brand-text">
+      <strong>PostgreSQL Academy</strong>
+      <span>Manual de Cero a Experto</span>
+    </div>
+  </div>
+  <div class="header-actions">
+    <div class="search-box">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C9D4E0" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="liveSearch" placeholder="Buscar en el manual...">
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ============================================================ -->
+  <!-- SIDEBAR -->
+  <!-- ============================================================ -->
+  <aside class="sidebar" id="sidebar">
+    <nav class="sidebar-nav">
+
+      <div class="toc-part">
+        <button class="toc-part-title"><span>Inicio</span><span class="chev">▾</span></button>
+        <ul>
+          <li><a href="#portada" data-target="portada">🏠 Portada del Manual</a></li>
+        </ul>
+      </div>
+
+      <div class="toc-part">
+        <button class="toc-part-title"><span>Parte I · Fundamentos</span><span class="chev">▾</span></button>
+        <ul>
+          <li><a href="#cap1" data-target="cap1">1. Intro a BD y SGBD</a></li>
+          <li><a href="#cap2" data-target="cap2">2. Instalación PostgreSQL</a></li>
+        </ul>
+      </div>
+
+      <div class="toc-part">
+        <button class="toc-part-title"><span>Parte II · SQL Esencial</span><span class="chev">▾</span></button>
+        <ul>
+          <li><a href="#cap3" data-target="cap3">3. Definición de Datos (DDL)</a></li>
+          <li><a href="#cap4" data-target="cap4">4. Manipulación (DML / CRUD)</a></li>
+          <li><a href="#cap5" data-target="cap5">5. Consultas Avanzadas</a></li>
+        </ul>
+      </div>
+
+      <div class="toc-part">
+        <button class="toc-part-title"><span>Parte III · Avanzado</span><span class="chev">▾</span></button>
+        <ul>
+          <li><a href="#cap6" data-target="cap6">6. PL/pgSQL y Procedimientos</a></li>
+          <li><a href="#cap7" data-target="cap7">7. PostgreSQL como ORDBMS</a></li>
+        </ul>
+      </div>
+
+      <div class="toc-part">
+        <button class="toc-part-title"><span>Parte IV · Conectividad</span><span class="chev">▾</span></button>
+        <ul>
+          <li><a href="#cap8" data-target="cap8">8. JDBC desde Java</a></li>
+          <li><a href="#cap9" data-target="cap9">9. Transacciones</a></li>
+        </ul>
+      </div>
+
+      <div class="toc-part">
+        <button class="toc-part-title"><span>Parte V · Administración</span><span class="chev">▾</span></button>
+        <ul>
+          <li><a href="#cap10" data-target="cap10">10. Herramientas Gráficas</a></li>
+          <li><a href="#cap11" data-target="cap11">11. Seguridad y Rendimiento</a></li>
+        </ul>
+      </div>
+
+      <div class="toc-part">
+        <button class="toc-part-title"><span>Cierre</span><span class="chev">▾</span></button>
+        <ul>
+          <li><a href="#cap12" data-target="cap12">12. Glosario General</a></li>
+          <li><a href="#cap13" data-target="cap13">13. Resumen Ejecutivo</a></li>
+          <li><a href="#cap14" data-target="cap14">14. Bibliografía</a></li>
+        </ul>
+      </div>
+
+    </nav>
+  </aside>
+
+  <!-- ============================================================ -->
+  <!-- CONTENIDO PRINCIPAL -->
+  <!-- ============================================================ -->
+  <main class="content">
+
+    <!-- ===================== PORTADA ===================== -->
+    <section class="hero" id="portada">
+      <span class="hero-kicker">MANUAL OFICIAL · NIVEL PRINCIPIANTE A EXPERTO</span>
+      <h1>PostgreSQL: De Cero a Experto para Programadores Principiantes</h1>
+      <p>Una guía exhaustiva y didáctica sobre el <strong>RDBMS</strong> (Relational Database Management System — Sistema de Gestión de Bases de Datos Relacionales) PostgreSQL: desde los fundamentos de bases de datos hasta la conectividad profesional con Java mediante <strong>JDBC</strong> (Java Database Connectivity), pasando por SQL, PL/pgSQL, transacciones ACID y las capacidades objeto-relacionales del motor.</p>
+      <div class="hero-tags">
+        <span>🟦 SQL Esencial</span>
+        <span>🟧 PL/pgSQL</span>
+        <span>☕ JDBC &amp; Java</span>
+        <span>🔐 Transacciones ACID</span>
+        <span>🧩 ORDBMS</span>
+        <span>🛡️ Seguridad</span>
+      </div>
+      <div class="hero-grid">
+        <div class="hero-stat"><b>14</b><span>Capítulos completos</span></div>
+        <div class="hero-stat"><b>110</b><span>Preguntas de autoevaluación</span></div>
+        <div class="hero-stat"><b>60+</b><span>Tablas y diagramas</span></div>
+        <div class="hero-stat"><b>1</b><span>Glosario integral</span></div>
+      </div>
+    </section>
+
+    <!-- ======================================================
+         PARTE I
+    ======================================================= -->
+    <div class="part-divider"><span class="num">I</span><h2>Fundamentos</h2></div>
+
+    <!-- ===================== CAPÍTULO 1 ===================== -->
+    <section class="chapter" id="cap1">
+      <div class="chapter-header">
+        <div class="chap-num">1</div>
+        <div><h2>Introducción a las Bases de Datos y los SGBD</h2>
+        <p>Conceptos básicos, tipos de SGBD y vías de conexión</p></div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">1.1. ¿Qué es una base de datos?</h3>
+        <p>Una <strong>base de datos</strong> es una colección organizada de información almacenada y accesible electrónicamente desde un sistema informático. Cuando esta información crece en volumen y complejidad, su diseño requiere técnicas formales de modelado (como el modelo entidad-relación).</p>
+        <div class="alert alert-info">
+          <span class="alert-icon">🔵</span>
+          <div><strong>INFORMACIÓN ADICIONAL</strong>Piensa en una base de datos como un archivador digital gigantesco: en lugar de carpetas físicas, tenemos tablas con filas y columnas, con la ventaja de buscar y relacionar millones de registros en milisegundos.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">1.2. ¿Qué es un SGBD?</h3>
+        <p>El <strong>SGBD</strong>, también llamado <strong>DBMS</strong> (<em>Database Management System</em> — Sistema de Gestión de Bases de Datos), es el software intermedio que interactúa con usuarios, aplicaciones y la propia base de datos para capturar, organizar y analizar los datos. Incluye además las herramientas para su administración.</p>
+        <p>Al conjunto formado por la base de datos + el SGBD + las aplicaciones asociadas se le denomina <strong>sistema de base de datos</strong>.</p>
+
+        <div class="diagram-card">
+          <div class="mermaid">
+graph LR
+    A[Usuario / Programador] -->|Consultas SQL| B[SGBD]
+    C[Aplicación Java / Python] -->|JDBC / ODBC / API| B
+    B --> D[(Base de Datos física)]
+    B --> E[Módulo de Seguridad]
+    B --> F[Módulo de Transacciones]
+    B --> G[Optimizador de Consultas]
+          </div>
+          <div class="diagram-caption">Fig. 1.1 — Arquitectura general de un Sistema de Gestión de Bases de Datos (SGBD)</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">1.3. Principales SGBD del mercado</h3>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>SGBD</th><th>Licencia</th><th>Uso típico</th><th>Observaciones</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Oracle Database</strong></td><td>Comercial</td><td>Grandes corporaciones</td><td>Muy robusto, licencias costosas</td></tr>
+            <tr><td><strong>Microsoft SQL Server</strong></td><td>Comercial</td><td>Entornos Windows</td><td>Fuerte integración con .NET</td></tr>
+            <tr><td><strong>MySQL</strong></td><td>Open Source</td><td>Aplicaciones web</td><td>Muy extendido en hosting</td></tr>
+            <tr><td><strong>SQLite</strong></td><td>Open Source</td><td>Apps embebidas / móviles</td><td>Un solo archivo</td></tr>
+            <tr><td><strong>PostgreSQL</strong></td><td>Open Source</td><td>Multiplataforma / académico</td><td>Soporte objeto-relacional, muy extensible</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <div class="alert alert-success">
+          <span class="alert-icon">🟢</span>
+          <div><strong>BUENA PRÁCTICA</strong>Elegir PostgreSQL para proyectos que requieran portabilidad entre sistemas operativos y funciones avanzadas (tipos de datos personalizados, JSON, herencia de tablas).</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">1.4. Formas de conectar una aplicación a un SGBD</h3>
+        <ol>
+          <li><strong>Bases de datos embebidas</strong>: la conexión entre el programa y la base de datos es directa. Máxima velocidad, pero poca portabilidad entre SGBD.</li>
+          <li><strong>API</strong> (<em>Application Programming Interface</em> — Interfaz de Programación de Aplicaciones) genérica: estándar <strong>ODBC</strong> (<em>Open Database Connectivity</em> — Conectividad Abierta a Bases de Datos), muy usado en C, C++, C# y Visual Basic.</li>
+          <li><strong>API nativa orientada a objetos</strong>: en Java se usa <strong>JDBC</strong> (<em>Java Database Connectivity</em> — Conectividad a Bases de Datos desde Java), ya que ODBC resulta inadecuado al basarse en llamadas estilo C con punteros.</li>
+        </ol>
+        <div class="alert alert-danger">
+          <span class="alert-icon">🔴</span>
+          <div><strong>CRÍTICO</strong>Una conexión embebida directa es poco recomendable para aplicaciones que deban ser portables entre distintos SGBD.</div>
+        </div>
+
+        <div class="diagram-card">
+          <div class="mermaid">
+graph TD
+    APP[Aplicacion] --> EMB[Conexion Embebida directa]
+    APP --> ODBC[ODBC]
+    APP --> JDBC[JDBC]
+    ODBC -.->|Bridge ODBC-JDBC| JDBC
+    JDBC --> DRV[Driver / Conector especifico]
+    DRV --> DB[(PostgreSQL)]
+          </div>
+          <div class="diagram-caption">Fig. 1.2 — Vías de conexión a una base de datos</div>
+        </div>
+        <p>Para usar JDBC necesitaremos instalar un <strong>driver</strong> (también llamado <strong>conector</strong>). Si no existe un driver JDBC nativo pero sí uno ODBC, se puede recurrir a un <strong>puente ODBC-JDBC</strong>.</p>
+      </div>
+
+      <div class="summary-box">
+        <h4>📋 Resumen del Capítulo 1</h4>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Concepto</th><th>Definición breve</th></tr></thead>
+          <tbody>
+            <tr><td>Base de datos</td><td>Colección organizada de datos accesibles electrónicamente</td></tr>
+            <tr><td>SGBD (DBMS)</td><td>Software que gestiona acceso, almacenamiento y seguridad de los datos</td></tr>
+            <tr><td>ODBC</td><td>Estándar de conectividad genérica (C/C++/C#/VB)</td></tr>
+            <tr><td>JDBC</td><td>Estándar de conectividad orientado a objetos para Java</td></tr>
+            <tr><td>Driver / Conector</td><td>Traduce llamadas JDBC/ODBC al protocolo propio del SGBD</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <!-- CUESTIONARIO CAP 1 -->
+      <div class="quiz-section">
+        <h3>Cuestionario de Autoevaluación — Capítulo 1</h3>
+        <div class="quiz-grid">
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">1</span>¿Qué diferencia principal existe entre una base de datos y un SGBD?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>La base de datos es el conjunto de datos almacenados; el SGBD es el software que gestiona el acceso, administración y seguridad de esos datos.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">2</span>¿Por qué ODBC no es recomendable en Java?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Porque se basa en llamadas estilo C con punteros (inexistentes en Java), generando riesgos de seguridad y falta de robustez.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">3</span>¿Cómo se denomina al driver JDBC en el mundo Java?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>"Driver" o "conector" (<em>connector</em>).</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">4</span>Cita dos SGBD orientados al uso empresarial de pago.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Oracle Database y Microsoft SQL Server.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">5</span>¿Qué SGBD se usa ampliamente en apps móviles embebidas?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>SQLite.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">6</span>Ventaja y desventaja de una conexión embebida directa.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Ventaja: máxima velocidad. Desventaja: poca portabilidad entre SGBD.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">7</span>¿Qué significan las siglas API?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><em>Application Programming Interface</em> (Interfaz de Programación de Aplicaciones).</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">8</span>¿Qué es un "puente ODBC-JDBC"?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Un adaptador para usar JDBC cuando solo existe driver ODBC disponible para el SGBD.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">9</span>¿Qué licencia tiene PostgreSQL?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Licencia de código abierto (tipo BSD/MIT, conocida como "Licencia PostgreSQL").</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">10</span>Menciona dos sistemas operativos donde corre PostgreSQL.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Windows, Linux, macOS (también FreeBSD y OpenBSD).</p></details></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== CAPÍTULO 2 ===================== -->
+    <section class="chapter" id="cap2">
+      <div class="chapter-header">
+        <div class="chap-num">2</div>
+        <div><h2>Instalación y Configuración de PostgreSQL</h2>
+        <p>Historia, características clave y puesta en marcha paso a paso</p></div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">2.1. ¿Qué es PostgreSQL?</h3>
+        <p><strong>PostgreSQL</strong>, también conocido como <strong>Postgres</strong>, es un <strong>RDBMS</strong> (<em>Relational Database Management System</em>) libre y de código abierto, centrado en la extensibilidad y el cumplimiento del estándar <strong>SQL</strong> (<em>Structured Query Language</em> — Lenguaje de Consulta Estructurado).</p>
+        <h4 class="subtitle">🕰️ Breve historia</h4>
+        <ul>
+          <li>Nació como sucesor del proyecto <strong>Ingres</strong>, desarrollado en la Universidad de California, Berkeley, bajo el nombre <strong>POSTGRES</strong>.</li>
+          <li>En <strong>1996</strong> se renombra <strong>PostgreSQL</strong> para reflejar su soporte de SQL.</li>
+          <li>Tras una revisión en <strong>2007</strong>, el equipo mantiene el nombre PostgreSQL, aceptando también el alias "Postgres".</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">2.2. Características principales</h3>
+        <ul>
+          <li>Transacciones con propiedades <strong>ACID</strong> (<em>Atomicity, Consistency, Isolation, Durability</em> — Atomicidad, Consistencia, Aislamiento y Durabilidad).</li>
+          <li>Vistas actualizables automáticamente y <strong>vistas materializadas</strong>.</li>
+          <li><strong>Triggers</strong> (disparadores) y <strong>claves foráneas</strong> (<em>foreign keys</em>).</li>
+          <li><strong>Procedimientos almacenados</strong> (<em>stored procedures</em>).</li>
+          <li>Es el SGBD por defecto de macOS Server; disponible para Windows, Linux, FreeBSD y OpenBSD.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">2.3. Instalación paso a paso</h3>
+        <h4 class="subtitle">Windows</h4>
+        <ol>
+          <li>Descargar el instalador desde el sitio oficial.</li>
+          <li>Ejecutar el asistente y seleccionar la ruta de instalación.</li>
+          <li>Establecer la contraseña del superusuario <code>postgres</code>.</li>
+          <li>Confirmar el puerto por defecto: <strong>5432</strong>.</li>
+          <li>Marcar la casilla para lanzar <strong>Stack Builder</strong> al finalizar.</li>
+        </ol>
+        <div class="alert alert-danger">
+          <span class="alert-icon">🔴</span>
+          <div><strong>PASO CRÍTICO</strong>Ejecutar Stack Builder es obligatorio para instalar los drivers JDBC. En Stack Builder: <em>Categorías → Database Drivers → pgJDBC</em>.</div>
+        </div>
+
+        <h4 class="subtitle">Linux (Debian/Ubuntu)</h4>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">bash</span></div>
+          <pre><code>sudo apt update
+sudo apt install postgresql postgresql-contrib
+sudo systemctl start postgresql
+sudo systemctl enable postgresql</code></pre>
+        </div>
+
+        <h4 class="subtitle">macOS</h4>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">bash</span></div>
+          <pre><code>brew install postgresql
+brew services start postgresql</code></pre>
+        </div>
+
+        <div class="diagram-card">
+          <div class="mermaid">
+flowchart TD
+    A[Descargar instalador PostgreSQL] --> B[Ejecutar asistente]
+    B --> C[Definir contrasena superusuario postgres]
+    C --> D[Confirmar puerto 5432]
+    D --> E[Marcar Lanzar Stack Builder]
+    E --> F[Seleccionar Database Drivers - pgJDBC]
+    F --> G[Instalacion completada]
+    G --> H[Abrir PgAdmin4 para administrar]
+          </div>
+          <div class="diagram-caption">Fig. 2.1 — Flujo de instalación de PostgreSQL + driver JDBC</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">2.4. PgAdmin4: herramienta gráfica de administración</h3>
+        <p>Se recomienda encarecidamente el uso de <strong>PgAdmin4</strong> para gestionar visualmente bases de datos, tablas, usuarios, roles y consultas SQL mediante su <strong>Query Tool</strong>.</p>
+      </div>
+
+      <div class="summary-box">
+        <h4>📋 Resumen del Capítulo 2</h4>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Elemento</th><th>Valor / Detalle</th></tr></thead>
+          <tbody>
+            <tr><td>Nombre original</td><td>POSTGRES (sucesor de Ingres, Berkeley)</td></tr>
+            <tr><td>Año de renombrado</td><td>1996 → PostgreSQL</td></tr>
+            <tr><td>Licencia</td><td>Código abierto</td></tr>
+            <tr><td>Puerto por defecto</td><td>5432</td></tr>
+            <tr><td>Usuario administrador por defecto</td><td>postgres</td></tr>
+            <tr><td>Herramienta gráfica recomendada</td><td>PgAdmin4</td></tr>
+            <tr><td>Herramienta obligatoria para JDBC</td><td>Stack Builder</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="activity-box">
+        <h4>🎯 Actividades Propuestas</h4>
+        <ol>
+          <li>Usando <strong>PgAdmin4</strong>, crear una base de datos llamada <code>VTInstitute</code>. Dentro, crear una tabla <code>subjects</code> con tres campos: <code>code</code> (secuencia), <code>name</code> (texto máx. 50 caracteres), <code>year</code> (entero).</li>
+          <li>Usando el <strong>Query Tool</strong> y <code>INSERT</code>, añadir: <em>'DATA ACCESS'</em> (2º año), <em>'DEVELOPMENT ENVIRONMENTS'</em> (1º), <em>'DATABASE MANAGEMENT SYSTEMS'</em> (1º), <em>'SERVICES AND PROCESSES'</em> (2º).</li>
+          <li>Crear la base de datos <code>employees</code>, descargar y ejecutar el script <code>employee-dept.sql</code>, verificando que se crean dos tablas con registros.</li>
+        </ol>
+      </div>
+
+      <div class="quiz-section">
+        <h3>Cuestionario de Autoevaluación — Capítulo 2</h3>
+        <div class="quiz-grid">
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">1</span>¿Qué significan las siglas ACID?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Atomicity, Consistency, Isolation, Durability (Atomicidad, Consistencia, Aislamiento, Durabilidad).</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">2</span>¿Cuál es el puerto por defecto de PostgreSQL?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>El puerto 5432.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">3</span>¿Por qué es obligatorio ejecutar Stack Builder en Windows?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Porque es la vía para instalar los drivers JDBC necesarios para conectar aplicaciones Java a PostgreSQL.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">4</span>¿Qué herramienta gráfica se recomienda?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>PgAdmin4.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">5</span>¿En qué universidad se originó el predecesor de PostgreSQL?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Universidad de California, Berkeley.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">6</span>¿Cómo se llamaba el proyecto antes de llamarse PostgreSQL?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>POSTGRES (sucesor de Ingres).</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">7</span>¿En qué sistema operativo es la BD por defecto?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>macOS Server.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">8</span>Comando para instalar PostgreSQL en Ubuntu/Debian.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>sudo apt install postgresql postgresql-contrib</code></p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">9</span>¿Qué es una vista materializada?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Una vista cuyo resultado se almacena físicamente y debe actualizarse explícitamente, a diferencia de una vista normal.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">10</span>Tres características avanzadas de PostgreSQL.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Triggers, procedimientos almacenados, herencia de tablas, tipos personalizados o soporte JSON/XML (cualquiera es válida).</p></details></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================
+         PARTE II
+    ======================================================= -->
+    <div class="part-divider"><span class="num">II</span><h2>SQL Esencial</h2></div>
+
+    <!-- ===================== CAPÍTULO 3 ===================== -->
+    <section class="chapter" id="cap3">
+      <div class="chapter-header">
+        <div class="chap-num">3</div>
+        <div><h2>Primeros Pasos con SQL: Definición de Datos (DDL)</h2>
+        <p>Creación de bases de datos, tablas, tipos y restricciones</p></div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">3.1. ¿Qué es SQL?</h3>
+        <p><strong>SQL</strong> (<em>Structured Query Language</em>) es el lenguaje estándar para interactuar con bases de datos relacionales. Se divide en subconjuntos:</p>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Subconjunto</th><th>Significado</th><th>Ejemplos</th></tr></thead>
+          <tbody>
+            <tr><td><strong>DDL</strong></td><td>Data Definition Language (Lenguaje de Definición de Datos)</td><td><code>CREATE</code>, <code>ALTER</code>, <code>DROP</code></td></tr>
+            <tr><td><strong>DML</strong></td><td>Data Manipulation Language (Lenguaje de Manipulación de Datos)</td><td><code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code></td></tr>
+            <tr><td><strong>DCL</strong></td><td>Data Control Language (Lenguaje de Control de Datos)</td><td><code>GRANT</code>, <code>REVOKE</code></td></tr>
+            <tr><td><strong>TCL</strong></td><td>Transaction Control Language (Lenguaje de Control de Transacciones)</td><td><code>COMMIT</code>, <code>ROLLBACK</code></td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">3.2. Creación de bases de datos y tablas</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">SQL</span></div>
+          <pre><code>CREATE DATABASE "VTInstitute";
+
+CREATE TABLE subjects (
+    code   SERIAL PRIMARY KEY,
+    name   VARCHAR(50) NOT NULL,
+    year   INTEGER NOT NULL
+);</code></pre>
+        </div>
+        <div class="alert alert-info">
+          <span class="alert-icon">🔵</span>
+          <div><strong>INFORMACIÓN ADICIONAL</strong><code>SERIAL</code> es un pseudo-tipo propio de PostgreSQL que crea automáticamente una <strong>secuencia</strong> asociada a la columna, generando valores autoincrementales.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">3.3. Tipos de datos más comunes</h3>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tipo</th><th>Descripción</th><th>Ejemplo</th></tr></thead>
+          <tbody>
+            <tr><td><code>INTEGER</code> / <code>INT</code></td><td>Número entero</td><td>25</td></tr>
+            <tr><td><code>SERIAL</code></td><td>Entero autoincremental</td><td>1, 2, 3...</td></tr>
+            <tr><td><code>VARCHAR(n)</code></td><td>Texto de longitud variable máxima n</td><td>'Data Access'</td></tr>
+            <tr><td><code>TEXT</code></td><td>Texto de longitud ilimitada</td><td>'Descripción larga...'</td></tr>
+            <tr><td><code>BOOLEAN</code></td><td>Verdadero/falso</td><td>TRUE / FALSE</td></tr>
+            <tr><td><code>DATE</code></td><td>Fecha</td><td>'2024-05-31'</td></tr>
+            <tr><td><code>TIMESTAMP</code></td><td>Fecha y hora</td><td>'2024-05-31 10:00:00'</td></tr>
+            <tr><td><code>NUMERIC(p,s)</code></td><td>Decimal de precisión exacta</td><td>1234.56</td></tr>
+            <tr><td><code>FLOAT</code> / <code>DOUBLE PRECISION</code></td><td>Decimal de coma flotante</td><td>3.14159</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">3.4. Restricciones (Constraints)</h3>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Restricción</th><th>Función</th></tr></thead>
+          <tbody>
+            <tr><td><code>PRIMARY KEY</code></td><td>Identifica de forma única cada fila</td></tr>
+            <tr><td><code>FOREIGN KEY</code></td><td>Relaciona una columna con la clave primaria de otra tabla</td></tr>
+            <tr><td><code>NOT NULL</code></td><td>Impide valores nulos</td></tr>
+            <tr><td><code>UNIQUE</code></td><td>Impide valores duplicados</td></tr>
+            <tr><td><code>CHECK</code></td><td>Valida una condición lógica sobre el valor</td></tr>
+            <tr><td><code>DEFAULT</code></td><td>Asigna un valor por defecto</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h4 class="subtitle">Ejemplo con clave foránea</h4>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">SQL</span></div>
+          <pre><code>CREATE TABLE courses (
+    code SERIAL PRIMARY KEY,
+    name VARCHAR(90) NOT NULL
+);
+
+ALTER TABLE subjects ADD COLUMN course INTEGER;
+
+ALTER TABLE subjects
+    ADD CONSTRAINT fk_course
+    FOREIGN KEY (course) REFERENCES courses(code);</code></pre>
+        </div>
+
+        <div class="diagram-card">
+          <div class="mermaid">
+erDiagram
+    COURSES ||--o{ SUBJECTS : tiene
+    COURSES {
+        int code PK
+        varchar name
+    }
+    SUBJECTS {
+        int code PK
+        varchar name
+        int year
+        int course FK
+    }
+          </div>
+          <div class="diagram-caption">Fig. 3.1 — Relación Entidad-Relación simplificada</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">3.5. Modificar y eliminar estructuras</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">SQL</span></div>
+          <pre><code>-- Anadir columna
+ALTER TABLE subjects ADD COLUMN hours INTEGER;
+
+-- Eliminar columna
+ALTER TABLE subjects DROP COLUMN hours;
+
+-- Eliminar tabla
+DROP TABLE subjects;</code></pre>
+        </div>
+      </div>
+
+      <div class="summary-box">
+        <h4>📋 Resumen del Capítulo 3</h4>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Comando</th><th>Propósito</th></tr></thead>
+          <tbody>
+            <tr><td><code>CREATE DATABASE</code></td><td>Crea una base de datos</td></tr>
+            <tr><td><code>CREATE TABLE</code></td><td>Define una nueva tabla</td></tr>
+            <tr><td><code>ALTER TABLE</code></td><td>Modifica estructura existente</td></tr>
+            <tr><td><code>DROP TABLE</code></td><td>Elimina una tabla</td></tr>
+            <tr><td><code>SERIAL</code></td><td>Tipo autoincremental basado en secuencias</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="quiz-section">
+        <h3>Cuestionario de Autoevaluación — Capítulo 3</h3>
+        <div class="quiz-grid">
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">1</span>¿Qué significan DDL y DML?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>DDL: Data Definition Language; DML: Data Manipulation Language.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">2</span>¿Qué hace el tipo SERIAL?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Crea automáticamente una secuencia que genera valores enteros autoincrementales.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">3</span>Diferencia entre VARCHAR(n) y TEXT.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>VARCHAR(n) limita la longitud a n caracteres; TEXT no tiene límite predefinido.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">4</span>Crea la tabla students (id serial PK, name texto 60 obligatorio).</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>CREATE TABLE students (id SERIAL PRIMARY KEY, name VARCHAR(60) NOT NULL);</code></p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">5</span>¿Qué restricción impide valores repetidos?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>UNIQUE</code>.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">6</span>¿Qué hace CHECK?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Valida que los valores cumplan una condición lógica definida.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">7</span>Comando para añadir una columna.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>ALTER TABLE nombre_tabla ADD COLUMN ...;</code></p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">8</span>¿Qué es una clave foránea?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Una columna que referencia la clave primaria de otra tabla, garantizando integridad referencial.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">9</span>¿Qué pasa al eliminar una tabla referenciada por FK sin precaución?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>PostgreSQL lanza un error, a menos que se use CASCADE o se elimine antes la restricción.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">10</span>¿Qué subconjunto incluye GRANT y REVOKE?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>DCL (Data Control Language).</p></details></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== CAPÍTULO 4 ===================== -->
+    <section class="chapter" id="cap4">
+      <div class="chapter-header">
+        <div class="chap-num">4</div>
+        <div><h2>Manipulación de Datos (DML): Operaciones CRUD</h2>
+        <p>Create, Read, Update, Delete</p></div>
+      </div>
+
+      <div class="card">
+        <p><strong>CRUD</strong> son las siglas de <em>Create, Read, Update, Delete</em> (Crear, Leer, Actualizar, Eliminar), las cuatro operaciones básicas sobre datos.</p>
+
+        <h3 class="section-title">4.1. INSERT — Crear registros</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">SQL</span></div>
+          <pre><code>INSERT INTO subjects (name, year)
+VALUES ('DATA ACCESS', 2),
+       ('DEVELOPMENT ENVIRONMENTS', 1),
+       ('DATABASE MANAGEMENT SYSTEMS', 1),
+       ('SERVICES AND PROCESSES', 2);</code></pre>
+        </div>
+        <div class="alert alert-success">
+          <span class="alert-icon">🟢</span>
+          <div><strong>BUENA PRÁCTICA</strong>No es necesario indicar el valor de <code>code</code> porque es <code>SERIAL</code>; PostgreSQL lo generará automáticamente.</div>
+        </div>
+
+        <h3 class="section-title">4.2. SELECT — Leer registros</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">SQL</span></div>
+          <pre><code>SELECT * FROM subjects;
+
+SELECT name, year FROM subjects
+WHERE year = 1
+ORDER BY name ASC;</code></pre>
+        </div>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Cláusula</th><th>Función</th></tr></thead>
+          <tbody>
+            <tr><td><code>WHERE</code></td><td>Filtra filas según una condición</td></tr>
+            <tr><td><code>ORDER BY</code></td><td>Ordena el resultado</td></tr>
+            <tr><td><code>LIMIT</code></td><td>Limita el número de filas devueltas</td></tr>
+            <tr><td><code>DISTINCT</code></td><td>Elimina filas duplicadas</td></tr>
+            <tr><td><code>GROUP BY</code></td><td>Agrupa filas para cálculos agregados</td></tr>
+            <tr><td><code>HAVING</code></td><td>Filtra grupos (junto a GROUP BY)</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h3 class="section-title">4.3. UPDATE — Actualizar registros</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">SQL</span></div>
+          <pre><code>UPDATE subjects
+SET year = 2
+WHERE name = 'DEVELOPMENT ENVIRONMENTS';</code></pre>
+        </div>
+        <div class="alert alert-danger">
+          <span class="alert-icon">🔴</span>
+          <div><strong>CRÍTICO</strong>Olvidar la cláusula <code>WHERE</code> en un <code>UPDATE</code> provoca que TODAS las filas de la tabla se actualicen.</div>
+        </div>
+
+        <h3 class="section-title">4.4. DELETE — Eliminar registros</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">SQL</span></div>
+          <pre><code>DELETE FROM subjects
+WHERE code = 5;</code></pre>
+        </div>
+        <div class="alert alert-danger">
+          <span class="alert-icon">🔴</span>
+          <div><strong>CRÍTICO</strong>Igual que con UPDATE, un DELETE sin WHERE borra TODOS los registros de la tabla.</div>
+        </div>
+
+        <div class="diagram-card">
+          <div class="mermaid">
+graph LR
+    C[CREATE / INSERT] --> R[READ / SELECT]
+    R --> U[UPDATE]
+    U --> R
+    R --> D[DELETE]
+          </div>
+          <div class="diagram-caption">Fig. 4.1 — Ciclo de vida CRUD</div>
+        </div>
+      </div>
+
+      <div class="summary-box">
+        <h4>📋 Resumen del Capítulo 4</h4>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Operación</th><th>Sentencia SQL</th><th>Riesgo principal</th></tr></thead>
+          <tbody>
+            <tr><td>Crear</td><td>INSERT</td><td>Violación de restricciones</td></tr>
+            <tr><td>Leer</td><td>SELECT</td><td>Rendimiento en consultas mal indexadas</td></tr>
+            <tr><td>Actualizar</td><td>UPDATE</td><td>Modificación masiva sin WHERE</td></tr>
+            <tr><td>Eliminar</td><td>DELETE</td><td>Borrado masivo sin WHERE</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="activity-box">
+        <h4>🎯 Actividades Propuestas</h4>
+        <ol>
+          <li>Usando <code>executeUpdate</code> desde Java, inserta <em>'Markup Languages'</em> (1º año) y muestra el valor devuelto.</li>
+          <li>Usando <code>execute</code> o <code>executeUpdate</code>, añade la columna <code>hours</code> (entero) a <code>subjects</code>.</li>
+        </ol>
+      </div>
+
+      <div class="quiz-section">
+        <h3>Cuestionario de Autoevaluación — Capítulo 4</h3>
+        <div class="quiz-grid">
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">1</span>¿Qué significan las siglas CRUD?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Create, Read, Update, Delete (Crear, Leer, Actualizar, Eliminar).</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">2</span>Sentencia para insertar filas.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>INSERT INTO</code>.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">3</span>¿Qué pasa con un DELETE sin WHERE?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Se eliminan todas las filas de la tabla.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">4</span>¿Para qué sirve ORDER BY?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Para ordenar el resultado según una o varias columnas.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">5</span>Diferencia entre WHERE y HAVING.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>WHERE filtra filas antes de agrupar; HAVING filtra grupos tras GROUP BY.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">6</span>¿Qué hace DISTINCT?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Elimina filas duplicadas del resultado.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">7</span>Actualiza year a 2 para code=3.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>UPDATE subjects SET year = 2 WHERE code = 3;</code></p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">8</span>¿Qué cláusula limita resultados?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>LIMIT</code>.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">9</span>¿Por qué usar PreparedStatement en vez de concatenar SQL?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Previene inyección SQL y mejora rendimiento en ejecuciones repetidas.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">10</span>¿Qué devuelve SELECT COUNT(*) FROM subjects?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>El número total de filas de la tabla.</p></details></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== CAPÍTULO 5 ===================== -->
+    <section class="chapter" id="cap5">
+      <div class="chapter-header">
+        <div class="chap-num">5</div>
+        <div><h2>Consultas Avanzadas: JOINs, Subconsultas y Agregación</h2>
+        <p>Combinando tablas y resumiendo información</p></div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">5.1. JOINs — Combinando tablas</h3>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tipo de JOIN</th><th>Descripción</th></tr></thead>
+          <tbody>
+            <tr><td><code>INNER JOIN</code></td><td>Solo filas con coincidencia en ambas tablas</td></tr>
+            <tr><td><code>LEFT JOIN</code></td><td>Todas las filas de la izquierda, NULL si no hay coincidencia</td></tr>
+            <tr><td><code>RIGHT JOIN</code></td><td>Todas las filas de la derecha, NULL si no hay coincidencia</td></tr>
+            <tr><td><code>FULL JOIN</code></td><td>Todas las filas de ambas tablas, coincidan o no</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">SQL</span></div>
+          <pre><code>SELECT subjects.name, courses.name AS course_name
+FROM subjects
+INNER JOIN courses ON subjects.course = courses.code;</code></pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">5.2. Funciones de agregación</h3>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Función</th><th>Resultado</th></tr></thead>
+          <tbody>
+            <tr><td><code>COUNT(*)</code></td><td>Número de filas</td></tr>
+            <tr><td><code>SUM(columna)</code></td><td>Suma de valores</td></tr>
+            <tr><td><code>AVG(columna)</code></td><td>Promedio</td></tr>
+            <tr><td><code>MAX(columna)</code></td><td>Valor máximo</td></tr>
+            <tr><td><code>MIN(columna)</code></td><td>Valor mínimo</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">SQL</span></div>
+          <pre><code>SELECT year, COUNT(*) AS total_subjects
+FROM subjects
+GROUP BY year;</code></pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">5.3. Subconsultas y Vistas</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">SQL</span></div>
+          <pre><code>SELECT name
+FROM subjects
+WHERE course IN (
+    SELECT code FROM courses WHERE name = 'Web development'
+);
+
+CREATE VIEW subjects_per_year AS
+SELECT year, COUNT(*) AS total
+FROM subjects
+GROUP BY year;
+
+SELECT * FROM subjects_per_year;</code></pre>
+        </div>
+        <div class="alert alert-success">
+          <span class="alert-icon">🟢</span>
+          <div><strong>BUENA PRÁCTICA</strong>Las vistas permiten crear una "API de datos" que oculta la complejidad del modelo físico, facilitando el mantenimiento.</div>
+        </div>
+
+        <h4 class="subtitle">Índices</h4>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">SQL</span></div>
+          <pre><code>CREATE INDEX idx_subjects_name ON subjects(name);</code></pre>
+        </div>
+
+        <div class="diagram-card">
+          <div class="mermaid">
+graph TD
+    subgraph INNER_JOIN [INNER JOIN]
+    A1((A)) --- B1((B))
+    end
+    subgraph LEFT_JOIN [LEFT JOIN]
+    A2((A completa)) --- B2((B coincidente))
+    end
+    subgraph FULL_JOIN [FULL JOIN]
+    A3((A completa)) --- B3((B completa))
+    end
+          </div>
+          <div class="diagram-caption">Fig. 5.1 — Tipos de JOIN</div>
+        </div>
+      </div>
+
+      <div class="summary-box">
+        <h4>📋 Resumen del Capítulo 5</h4>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Elemento</th><th>Uso principal</th></tr></thead>
+          <tbody>
+            <tr><td>INNER JOIN</td><td>Combinar tablas por coincidencia</td></tr>
+            <tr><td>LEFT/RIGHT JOIN</td><td>Incluir filas sin coincidencia</td></tr>
+            <tr><td>GROUP BY + agregación</td><td>Resúmenes estadísticos</td></tr>
+            <tr><td>Subconsulta</td><td>Consulta dentro de otra consulta</td></tr>
+            <tr><td>VIEW</td><td>Abstracción de datos reutilizable</td></tr>
+            <tr><td>INDEX</td><td>Mejorar rendimiento de búsquedas</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="quiz-section">
+        <h3>Cuestionario de Autoevaluación — Capítulo 5</h3>
+        <div class="quiz-grid">
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">1</span>Diferencia entre INNER JOIN y LEFT JOIN.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>INNER JOIN solo filas coincidentes; LEFT JOIN incluye todas las de la izquierda, con NULL si no hay coincidencia.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">2</span>¿Qué función cuenta filas?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>COUNT(*)</code>.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">3</span>¿Qué es una subconsulta?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Una consulta anidada dentro de otra consulta SQL.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">4</span>¿Qué es una VIEW y qué ventaja aporta?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Consulta almacenada como tabla virtual; abstrae y simplifica el acceso a los datos.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">5</span>Promedio de year en subjects.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>SELECT AVG(year) FROM subjects;</code></p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">6</span>¿Para qué sirve un INDEX?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Acelerar búsquedas y ordenaciones sobre una columna.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">7</span>¿Qué cláusula filtra grupos?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>HAVING</code>.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">8</span>¿Qué devuelve un FULL JOIN?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Todas las filas de ambas tablas, tengan o no coincidencia.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">9</span>Inconveniente de demasiados índices.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Ralentiza inserciones/actualizaciones/borrados y ocupa espacio en disco.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">10</span>Palabra clave para alias.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>AS</code>.</p></details></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================
+         PARTE III
+    ======================================================= -->
+    <div class="part-divider"><span class="num">III</span><h2>Programación Avanzada</h2></div>
+
+    <!-- ===================== CAPÍTULO 6 ===================== -->
+    <section class="chapter" id="cap6">
+      <div class="chapter-header">
+        <div class="chap-num">6</div>
+        <div><h2>PL/pgSQL y Procedimientos Almacenados</h2>
+        <p>Funciones, procedimientos y retorno de conjuntos de datos</p></div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">6.1. ¿Qué es PL/pgSQL?</h3>
+        <p><strong>PL/pgSQL</strong> (<em>Procedural Language/PostgreSQL</em>) es el lenguaje procedimental propio de PostgreSQL para escribir funciones y procedimientos almacenados ejecutados directamente en el motor.</p>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Concepto</th><th>¿Devuelve valor?</th><th>Palabra clave</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Función</strong></td><td>Sí (valor o conjunto de filas)</td><td><code>CREATE FUNCTION</code></td></tr>
+            <tr><td><strong>Procedimiento</strong></td><td>No necesariamente</td><td><code>CREATE PROCEDURE</code></td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">6.2. Estructura básica</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">PL/pgSQL</span></div>
+          <pre><code>CREATE OR REPLACE FUNCTION function_name (arguments)
+RETURNS return_datatype
+LANGUAGE 'plpgsql'
+AS $BODY$
+DECLARE
+    declaration;
+BEGIN
+    -- cuerpo de la funcion
+    RETURN valor;
+END;
+$BODY$;</code></pre>
+        </div>
+
+        <h4 class="subtitle">Ejemplo práctico: contar asignaturas por año</h4>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">PL/pgSQL</span></div>
+          <pre><code>CREATE OR REPLACE FUNCTION public.subjectsinyear(theyear integer)
+    RETURNS integer
+    LANGUAGE 'plpgsql'
+AS $BODY$
+DECLARE
+    amount INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO amount FROM subjects WHERE subjects.year = theyear;
+    RETURN amount;
+END;
+$BODY$;
+
+-- Invocacion
+SELECT subjectsinyear(1);</code></pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">6.3. Retorno de conjuntos: SETOF, CREATE TYPE y RETURNS TABLE</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">PL/pgSQL</span></div>
+          <pre><code>CREATE OR REPLACE FUNCTION listofsubjects(theyear integer)
+    RETURNS SETOF subjects
+    LANGUAGE 'plpgsql'
+AS $BODY$
+BEGIN
+    RETURN QUERY
+        SELECT * FROM subjects WHERE year = theyear;
+END;
+$BODY$;</code></pre>
+        </div>
+
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">PL/pgSQL</span></div>
+          <pre><code>CREATE TYPE subjects_with_courses AS (
+    name   VARCHAR(50),
+    course VARCHAR(90)
+);
+
+CREATE OR REPLACE FUNCTION public.subjects_and_courses(theyear integer)
+    RETURNS SETOF subjects_with_courses
+    LANGUAGE 'plpgsql'
+AS $BODY$
+DECLARE
+    mysubject subjects_with_courses;
+BEGIN
+    FOR mysubject IN
+        SELECT subjects.name, courses.name
+        FROM subjects INNER JOIN courses ON subjects.course = courses.code
+        WHERE year = theyear
+    LOOP
+        RETURN NEXT mysubject;
+    END LOOP;
+END;
+$BODY$;</code></pre>
+        </div>
+
+        <div class="diagram-card">
+          <div class="mermaid">
+graph TD
+    F[Funcion PL/pgSQL] --> A[Valor unico]
+    F --> B[Conjunto de registros - SETOF tabla]
+    F --> C[Tipo personalizado - CREATE TYPE]
+    F --> D[Tabla en linea - RETURNS TABLE]
+          </div>
+          <div class="diagram-caption">Fig. 6.1 — Opciones para retornar datos desde una función PL/pgSQL</div>
+        </div>
+      </div>
+
+      <div class="summary-box">
+        <h4>📋 Resumen del Capítulo 6</h4>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Elemento</th><th>Uso</th></tr></thead>
+          <tbody>
+            <tr><td><code>CREATE FUNCTION</code></td><td>Define una función que devuelve un valor</td></tr>
+            <tr><td><code>CREATE PROCEDURE</code></td><td>Define un procedimiento sin obligación de retorno</td></tr>
+            <tr><td><code>RETURNS SETOF</code></td><td>Devuelve un conjunto de filas</td></tr>
+            <tr><td><code>CREATE TYPE</code></td><td>Define un tipo personalizado de retorno</td></tr>
+            <tr><td><code>RETURNS TABLE</code></td><td>Estructura de retorno "en línea"</td></tr>
+            <tr><td><code>RETURN QUERY</code></td><td>Atajo para devolver el resultado de una consulta</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="activity-box">
+        <h4>🎯 Actividades Propuestas</h4>
+        <ol>
+          <li>Con <code>employees</code>, crear un procedimiento que liste empleados de un puesto concreto.</li>
+          <li>Crear un procedimiento que devuelva empleados de un departamento específico.</li>
+          <li>Crear un procedimiento que liste empleados cuyo nombre contenga un patrón dado.</li>
+          <li>Crear una aplicación Java que invoque cualquiera de los procedimientos anteriores.</li>
+        </ol>
+      </div>
+
+      <div class="quiz-section">
+        <h3>Cuestionario de Autoevaluación — Capítulo 6</h3>
+        <div class="quiz-grid">
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">1</span>¿Qué significan las siglas PL/pgSQL?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Procedural Language/PostgreSQL (Lenguaje Procedimental de PostgreSQL).</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">2</span>Diferencia entre función y procedimiento.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>La función está obligada a devolver un valor; el procedimiento no.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">3</span>Palabra clave para devolver múltiples filas.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>RETURNS SETOF</code>.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">4</span>Instrucción que simplifica el retorno evitando FOR...LOOP.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>RETURN QUERY</code>.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">5</span>¿Para qué sirve CREATE TYPE aquí?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Define una estructura personalizada (mini-vista) para usar como tipo de retorno.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">6</span>Alternativa a CREATE TYPE para definir retorno.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>RETURNS TABLE(columna tipo, ...)</code>.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">7</span>Invocar subjectsinyear con parámetro 1.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>SELECT subjectsinyear(1);</code></p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">8</span>En PgAdmin4, ¿dónde se escribe el cuerpo DECLARE...BEGIN...END?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>En la pestaña <strong>Code</strong>.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">9</span>Ventaja de usar procedimientos almacenados.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Mayor seguridad frente a inyección SQL, mejor rendimiento y reutilización de lógica.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">10</span>¿Qué es el tipo RECORD?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Un tipo genérico que almacena una fila con estructura dinámica dentro de una función.</p></details></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== CAPÍTULO 7 ===================== -->
+    <section class="chapter" id="cap7">
+      <div class="chapter-header">
+        <div class="chap-num">7</div>
+        <div><h2>PostgreSQL como ORDBMS</h2>
+        <p>Dominios, tipos compuestos, enumerados, arrays y herencia</p></div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">7.1. ¿Qué es un ORDBMS?</h3>
+        <p>Un <strong>ORD</strong> (<em>Object-Relational Database</em>) o <strong>ORDBMS</strong> (<em>Object-Relational Database Management System</em> — Sistema de Gestión de Bases de Datos Objeto-Relacional) soporta directamente conceptos de la <strong>POO</strong> (Programación Orientada a Objetos): objetos, clases y herencia, integrados en el esquema y en el lenguaje de consultas.</p>
+        <div class="diagram-card">
+          <div class="mermaid">
+graph LR
+    A[SGBD Relacional Puro] --> B[ORDBMS - PostgreSQL, Oracle]
+    B --> C[OODBMS - Objeto puro]
+          </div>
+          <div class="diagram-caption">Fig. 7.1 — Espectro Relacional ↔ Orientado a Objetos</div>
+        </div>
+        <div class="alert alert-info">
+          <span class="alert-icon">🔵</span>
+          <div><strong>INFORMACIÓN ADICIONAL</strong>PostgreSQL es un entorno fuertemente tipado: el polimorfismo real requiere conversiones (<em>casts</em>) explícitas.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">7.2. Abstracción y encapsulación de datos</h3>
+        <p>Las <strong>vistas</strong> permiten crear una interfaz abstraída de los datos, independiente del almacenamiento físico. Con funciones es posible simular "campos calculados":</p>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">SQL</span></div>
+          <pre><code>-- PostgreSQL transforma automaticamente:
+SELECT e.name FROM employee e;
+-- en:
+SELECT name(e) FROM employee e;</code></pre>
+        </div>
+        <div class="alert alert-warning">
+          <span class="alert-icon">🟡</span>
+          <div><strong>ATENCIÓN</strong>Esta transformación solo ocurre con la referencia a la fila completa (<code>e.name</code>); <code>SELECT name FROM employee</code> no tiene el mismo efecto.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">7.3. Polimorfismo: Dominios</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">SQL</span></div>
+          <pre><code>CREATE DOMAIN posint AS integer CHECK (VALUE > 0);
+
+CREATE TABLE mytable (id posint);
+
+INSERT INTO mytable VALUES(1);   -- funciona
+INSERT INTO mytable VALUES(-1);  -- falla (viola el CHECK)</code></pre>
+        </div>
+        <div class="alert alert-danger">
+          <span class="alert-icon">🔴</span>
+          <div><strong>CRÍTICO</strong>Un <em>cast</em> implícito mal diseñado puede insertar datos erróneos sin lanzar error: <code>'2012-05-31'</code> es una fecha válida, pero <code>2012-05-31</code> sin comillas se evalúa aritméticamente como <code>1976</code>.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">7.4. Tipos compuestos, enumerados y arrays</h3>
+
+        <h4 class="subtitle">Tipos compuestos</h4>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">SQL</span></div>
+          <pre><code>CREATE TYPE inventory_item AS (
+    name        text,
+    supplier_id integer,
+    price       numeric
+);
+
+-- Correcto, con parentesis:
+SELECT (item).name FROM on_hand WHERE (item).price > 9.99;</code></pre>
+        </div>
+
+        <h4 class="subtitle">Tipos enumerados (ENUM)</h4>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">SQL</span></div>
+          <pre><code>CREATE TYPE mood AS ENUM ('sad', 'ok', 'happy');
+
+CREATE TABLE person (
+    name         text,
+    current_mood mood
+);
+INSERT INTO person VALUES ('Moe', 'happy');</code></pre>
+        </div>
+
+        <h4 class="subtitle">Arrays</h4>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">SQL</span></div>
+          <pre><code>CREATE TABLE notes (
+    noteDate DATE,
+    lines    TEXT[]
+);
+
+INSERT INTO notes VALUES ('2021-09-08',
+  ARRAY['Course beginning', 'Prepare a PPT file']);
+
+SELECT noteDate, lines[1] FROM notes;
+UPDATE notes SET lines[2] = 'Prepare a PPT file';</code></pre>
+        </div>
+        <div class="alert alert-warning">
+          <span class="alert-icon">🟡</span>
+          <div><strong>ATENCIÓN</strong>A diferencia de Java, en los arrays de PostgreSQL el primer elemento tiene índice <strong>1</strong>, no 0.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">7.5. Herencia de tablas</h3>
+        <p>PostgreSQL permite que una tabla <strong>herede</strong> de otra, incluyendo <strong>herencia múltiple</strong> (a diferencia de Oracle, DB2 e Informix).</p>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">SQL</span></div>
+          <pre><code>CREATE TABLE cities (
+    code       int PRIMARY KEY,
+    name       text,
+    population float,
+    elevation  int
+);
+
+CREATE TABLE capitals (
+    state char(2)
+) INHERITS (cities);
+
+-- Solo ciudades (sin capitales)
+SELECT name, elevation FROM ONLY cities WHERE elevation > 500;
+
+-- Las claves no se heredan: hay que anadirlas
+ALTER TABLE capitals ADD CONSTRAINT pk_capitals PRIMARY KEY (code);</code></pre>
+        </div>
+        <div class="alert alert-danger">
+          <span class="alert-icon">🔴</span>
+          <div><strong>CRÍTICO</strong>Los índices (incluida la clave primaria) NO se heredan automáticamente en PostgreSQL.</div>
+        </div>
+
+        <div class="diagram-card">
+          <div class="mermaid">
+classDiagram
+    class cities {
+        +int code
+        +text name
+        +float population
+        +int elevation
+    }
+    class capitals {
+        +char state
+    }
+    cities <|-- capitals
+          </div>
+          <div class="diagram-caption">Fig. 7.2 — Herencia de tablas en PostgreSQL</div>
+        </div>
+      </div>
+
+      <div class="summary-box">
+        <h4>📋 Resumen del Capítulo 7</h4>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Concepto</th><th>Palabra clave</th><th>Ejemplo de uso</th></tr></thead>
+          <tbody>
+            <tr><td>Dominio</td><td><code>CREATE DOMAIN</code></td><td>Restringir enteros positivos</td></tr>
+            <tr><td>Tipo compuesto</td><td><code>CREATE TYPE ... AS (...)</code></td><td>Coordenadas, estructuras</td></tr>
+            <tr><td>Tipo enumerado</td><td><code>CREATE TYPE ... AS ENUM (...)</code></td><td>Estados, categorías fijas</td></tr>
+            <tr><td>Array</td><td><code>tipo[]</code></td><td>Listas de valores en una columna</td></tr>
+            <tr><td>Herencia</td><td><code>INHERITS (tabla_padre)</code></td><td>Especialización de entidades</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="activity-box">
+        <h4>🎯 Actividades Propuestas</h4>
+        <ol>
+          <li>Modifica <code>dept</code> y <code>employee</code> de <code>employees</code> usando tipos avanzados.</li>
+          <li>Realiza lo mismo con <code>VTInstitute</code>.</li>
+          <li>Modela <code>Author</code>, <code>ArtWork</code>, <code>Painting</code> y <code>Sculpture</code> (herencia), con código de autor por iniciales+año, código de obra como secuencia, dimensiones &gt; 0 y <code>DimensionsType</code> como tipo compuesto.</li>
+        </ol>
+      </div>
+
+      <div class="quiz-section">
+        <h3>Cuestionario de Autoevaluación — Capítulo 7</h3>
+        <div class="quiz-grid">
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">1</span>¿Qué significan las siglas ORDBMS?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Object-Relational Database Management System (Sistema de Gestión de Bases de Datos Objeto-Relacional).</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">2</span>Diferencia principal ORDBMS vs OODBMS.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>El ORDBMS mantiene el modelo relacional con soporte de objetos; el OODBMS es un almacén persistente de objetos puro.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">3</span>¿Qué es un dominio (DOMAIN)?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Un tipo de dato basado en otro, con restricciones opcionales (CHECK) sobre sus valores válidos.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">4</span>¿Por qué se usan paréntesis al acceder a un campo compuesto?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Sin ellos, PostgreSQL interpreta el nombre como una tabla, no como columna del tipo compuesto.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">5</span>Índice del primer elemento de un array.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>El índice 1 (no 0).</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">6</span>Palabra clave para excluir filas heredadas.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>ONLY</code> (ej: <code>SELECT * FROM ONLY cities</code>).</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">7</span>¿Se heredan los índices con INHERITS?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>No, ni siquiera las claves primarias se heredan automáticamente.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">8</span>Riesgo de un cast implícito mal diseñado.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Podría insertar '1976-01-01' en vez de '2012-05-31' sin lanzar error.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">9</span>¿PostgreSQL admite herencia múltiple?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Sí, a diferencia de Oracle, DB2 e Informix (herencia simple).</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">10</span>Tipo que define un conjunto fijo y ordenado de valores.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>El tipo <code>ENUM</code>.</p></details></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================
+         PARTE IV
+    ======================================================= -->
+    <div class="part-divider"><span class="num">IV</span><h2>Conectividad desde Aplicaciones</h2></div>
+
+    <!-- ===================== CAPÍTULO 8 ===================== -->
+    <section class="chapter" id="cap8">
+      <div class="chapter-header">
+        <div class="chap-num">8</div>
+        <div><h2>JDBC: Conexión desde Java</h2>
+        <p>Driver, Connection, Statement, PreparedStatement y CallableStatement</p></div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">8.1. Pasos generales para conectar con JDBC</h3>
+        <p><strong>JDBC</strong> (<em>Java Database Connectivity</em>) requiere tres pasos: registrar el driver, formular la URL y crear el objeto <code>Connection</code>.</p>
+        <div class="diagram-card">
+          <div class="mermaid">
+sequenceDiagram
+    participant App as Aplicacion Java
+    participant JVM as JVM
+    participant DM as DriverManager
+    participant DB as PostgreSQL
+    App->>JVM: Class.forName("org.postgresql.Driver")
+    JVM-->>App: Driver registrado
+    App->>DM: getConnection(url, user, password)
+    DM->>DB: Solicitud de conexion
+    DB-->>DM: Conexion establecida
+    DM-->>App: Objeto Connection
+          </div>
+          <div class="diagram-caption">Fig. 8.1 — Pasos de conexión JDBC</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">8.2. Registro del driver JDBC</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">Java</span></div>
+          <pre><code>try {
+    Class.forName("org.postgresql.Driver");
+}
+catch (ClassNotFoundException ex) {
+    System.out.println("Error: unable to load driver class!");
+    System.exit(1);
+}</code></pre>
+        </div>
+        <div class="alert alert-info">
+          <span class="alert-icon">🔵</span>
+          <div><strong>INFORMACIÓN ADICIONAL</strong>Desde JDBC 4.0, los drivers en el <em>classpath</em> se cargan automáticamente sin necesidad de <code>Class.forName()</code>.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">8.3. Formulación de la URL de conexión</h3>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>SGBD</th><th>Driver JDBC</th><th>Formato de URL</th></tr></thead>
+          <tbody>
+            <tr><td><strong>PostgreSQL</strong></td><td><code>org.postgresql.Driver</code></td><td><code>jdbc:postgresql://host:puerto/bd</code></td></tr>
+            <tr><td>SQL Server</td><td><code>com.microsoft.sqlserver.jdbc.SQLServerDriver</code></td><td><code>jdbc:sqlserver://host:puerto;database=bd;</code></td></tr>
+            <tr><td>MySQL</td><td><code>com.mysql.jdbc.Driver</code></td><td><code>jdbc:mysql://host/bd</code></td></tr>
+            <tr><td>Oracle</td><td><code>oracle.jdbc.driver.OracleDriver</code></td><td><code>jdbc:oracle:thin:@host:puerto:bd</code></td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">8.4. Creación del objeto Connection</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">Java</span></div>
+          <pre><code>String URL = "jdbc:postgresql://localhost:5432/VTInstitute";
+String USER = "postgres";
+String PASS = "pwd";
+Connection conn = DriverManager.getConnection(URL, USER, PASS);</code></pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">8.5. Cierre de conexiones y try-with-resources</h3>
+        <div class="alert alert-danger">
+          <span class="alert-icon">🔴</span>
+          <div><strong>CRÍTICO</strong>Es obligatorio cerrar explícitamente toda conexión mediante <code>close()</code>. Confiar en el <em>garbage collector</em> es una mala práctica.</div>
+        </div>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">Java</span></div>
+          <pre><code>static final String url = "jdbc:postgresql://localhost:5432/VTInstitute";
+static final String user = "postgres";
+static final String password = "pwd";
+
+public static void main(String[] args) throws Exception {
+    try (Connection conn = DriverManager.getConnection(url, user, password)) {
+        System.out.println("Connection established!!!");
+    }
+    catch (SQLException e) {
+        System.out.println("Connection couldn't be established!");
+    }
+}</code></pre>
+        </div>
+        <div class="alert alert-success">
+          <span class="alert-icon">🟢</span>
+          <div><strong>BUENA PRÁCTICA</strong>El <em>try-with-resources</em> (desde Java 7) cierra automáticamente cualquier objeto <code>AutoCloseable</code>, incluso ante excepciones.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">8.6. Statement: enviando SQL</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">Java</span></div>
+          <pre><code>Statement statement = con.createStatement();
+String SQLsentence = "SELECT * FROM subjects ORDER BY code";
+ResultSet rs = statement.executeQuery(SQLsentence);
+
+while (rs.next()) {
+    System.out.println(rs.getString(1) + "\t " + rs.getString(2));
+}
+rs.close();
+con.close();</code></pre>
+        </div>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Método</th><th>Retorno</th><th>Uso recomendado</th></tr></thead>
+          <tbody>
+            <tr><td><code>execute(String SQL)</code></td><td>boolean</td><td>DDL o SQL dinámico</td></tr>
+            <tr><td><code>executeUpdate(String SQL)</code></td><td>int (filas afectadas)</td><td>INSERT, UPDATE, DELETE</td></tr>
+            <tr><td><code>executeQuery(String SQL)</code></td><td>ResultSet</td><td>SELECT</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">8.7. PreparedStatement</h3>
+        <p><code>PreparedStatement</code> representa sentencias SQL <strong>precompiladas</strong>, ideales si la misma sentencia se ejecuta repetidamente.</p>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">Java</span></div>
+          <pre><code>PreparedStatement pstmt = conn.prepareStatement(
+    "INSERT INTO subjects (Name, Year) VALUES (?, ?)");
+pstmt.setString(1, "Markup Languages");
+pstmt.setInt(2, 1);
+pstmt.executeUpdate();</code></pre>
+        </div>
+
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Statement</th><th>PreparedStatement</th></tr></thead>
+          <tbody>
+            <tr><td>Acceso general con SQL estático</td><td>Ejecuta SQL precompilado</td></tr>
+            <tr><td>No admite parámetros en runtime</td><td>Admite parámetros (?) en runtime</td></tr>
+            <tr><td><span class="crit-chip red">Vulnerable</span> a inyección SQL</td><td><span class="crit-chip green">Resistente</span> a inyección SQL</td></tr>
+            <tr><td>Ideal para DDL</td><td>Ideal para DML (SELECT, UPDATE, INSERT)</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">8.8. CallableStatement: invocando procedimientos</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">Java</span></div>
+          <pre><code>try (Connection conn = DriverManager.getConnection(url, user, password)) {
+    CallableStatement statement = conn.prepareCall("{call listofsubjects(1)}");
+    ResultSet rs = statement.executeQuery();
+    while (rs.next()) {
+        System.out.println(rs.getString(1) + "\t " + rs.getString(2));
+    }
+}
+catch (SQLException e) {
+    e.printStackTrace();
+}</code></pre>
+        </div>
+        <div class="alert alert-warning">
+          <span class="alert-icon">🟡</span>
+          <div><strong>ATENCIÓN</strong>Para invocar un <strong>procedimiento</strong> (no una función), se omiten las llaves: <code>conn.prepareCall("call doSomething()")</code>.</div>
+        </div>
+
+        <div class="diagram-card">
+          <div class="mermaid">
+classDiagram
+    Statement <|-- PreparedStatement
+    PreparedStatement <|-- CallableStatement
+    class Statement {
+        +execute(sql)
+        +executeUpdate(sql)
+        +executeQuery(sql)
+    }
+    class PreparedStatement {
+        +setInt(idx, val)
+        +setString(idx, val)
+    }
+    class CallableStatement {
+        +prepareCall(sql)
+    }
+          </div>
+          <div class="diagram-caption">Fig. 8.2 — Jerarquía de interfaces JDBC</div>
+        </div>
+      </div>
+
+      <div class="summary-box">
+        <h4>📋 Resumen del Capítulo 8</h4>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Elemento JDBC</th><th>Finalidad</th></tr></thead>
+          <tbody>
+            <tr><td>DriverManager</td><td>Gestiona drivers y crea conexiones</td></tr>
+            <tr><td>Connection</td><td>Sesión activa con la base de datos</td></tr>
+            <tr><td>Statement</td><td>Ejecuta SQL estático</td></tr>
+            <tr><td>PreparedStatement</td><td>SQL parametrizado y precompilado</td></tr>
+            <tr><td>CallableStatement</td><td>Invoca procedimientos/funciones almacenadas</td></tr>
+            <tr><td>ResultSet</td><td>Representa las filas devueltas</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="activity-box">
+        <h4>🎯 Actividades Propuestas</h4>
+        <ol>
+          <li>Crear un proyecto Maven en IntelliJ IDEA con la dependencia de PostgreSQL, mostrando año y control de errores.</li>
+          <li>Usar <code>executeUpdate</code> para insertar una nueva asignatura, mostrando el valor devuelto.</li>
+          <li>Reescribir usando <code>PreparedStatement</code> con un bucle y señal de parada.</li>
+          <li>Crear una app Java que invoque los procedimientos del Capítulo 6.</li>
+        </ol>
+      </div>
+
+      <div class="quiz-section">
+        <h3>Cuestionario de Autoevaluación — Capítulo 8</h3>
+        <div class="quiz-grid">
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">1</span>Tres pasos para una conexión JDBC.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Registrar el driver, formular la URL y crear el objeto Connection.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">2</span>Método tradicional para registrar un driver.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>Class.forName("org.postgresql.Driver")</code>.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">3</span>Formato general de URL JDBC para PostgreSQL.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>jdbc:postgresql://hostname:portNumber/databaseName</code>.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">4</span>Diferencia executeQuery() vs executeUpdate().</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>executeQuery() es para SELECT y devuelve ResultSet; executeUpdate() es para INSERT/UPDATE/DELETE y devuelve filas afectadas.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">5</span>¿Por qué PreparedStatement es más seguro?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Escapa automáticamente caracteres especiales, evitando inyección SQL.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">6</span>Ventaja de try-with-resources.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Garantiza el cierre automático de recursos incluso ante excepciones.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">7</span>Interfaz para invocar procedimientos almacenados.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>CallableStatement</code>.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">8</span>Llamada JDBC para invocar listofsubjects(1).</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>conn.prepareCall("{call listofsubjects(1)}")</code>.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">9</span>Biblioteca que simplifica el cierre de recursos.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Apache Commons DbUtils (<code>DbUtils.closeQuietly()</code>).</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">10</span>¿Qué pasa si no cerramos una conexión JDBC?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>El garbage collector la cerrará eventualmente, pero puede agotar las conexiones disponibles del servidor antes.</p></details></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== CAPÍTULO 9 ===================== -->
+    <section class="chapter" id="cap9">
+      <div class="chapter-header">
+        <div class="chap-num">9</div>
+        <div><h2>Transacciones y Buenas Prácticas</h2>
+        <p>Propiedades ACID aplicadas a SQL y JDBC</p></div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">9.1. ¿Qué es una transacción?</h3>
+        <p>Una <strong>transacción</strong> es una unidad lógica de trabajo. Si tiene éxito, los cambios se confirman (<code>COMMIT</code>); si ocurre un error, se deshacen (<code>ROLLBACK</code>).</p>
+
+        <h3 class="section-title">9.2. Propiedades ACID</h3>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Propiedad</th><th>Significado</th><th>Explicación</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Atomicity</strong></td><td>Atomicidad</td><td>Todo o nada</td></tr>
+            <tr><td><strong>Consistency</strong></td><td>Consistencia</td><td>De estado válido a estado válido</td></tr>
+            <tr><td><strong>Isolation</strong></td><td>Aislamiento</td><td>Transacciones concurrentes no se interfieren</td></tr>
+            <tr><td><strong>Durability</strong></td><td>Durabilidad</td><td>Los cambios confirmados persisten tras fallos</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <div class="diagram-card">
+          <div class="mermaid">
+flowchart TD
+    Start([Inicio de transaccion]) --> Check{Saldo de A mayor o igual a 500?}
+    Check -- No --> Rollback[ROLLBACK: cancelar operacion]
+    Check -- Si --> Debit[Restar 500 a la cuenta A]
+    Debit --> Credit[Sumar 500 a la cuenta B]
+    Credit --> Commit[COMMIT: confirmar cambios]
+    Rollback --> End([Fin])
+    Commit --> End
+          </div>
+          <div class="diagram-caption">Fig. 9.1 — Ejemplo clásico: transferencia bancaria</div>
+        </div>
+        <div class="alert alert-danger">
+          <span class="alert-icon">🔴</span>
+          <div><strong>CRÍTICO</strong>Sin transacción, si el proceso falla entre la resta a A y la suma a B, el dinero "desaparece" del sistema.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">9.3. Transacciones en SQL y JDBC</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">SQL</span></div>
+          <pre><code>BEGIN;
+-- Operaciones...
+COMMIT;    -- Confirma los cambios
+-- o bien:
+ROLLBACK;  -- Deshace los cambios</code></pre>
+        </div>
+
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">Java</span></div>
+          <pre><code>try (Connection conn = DriverManager.getConnection(url, user, password)) {
+    conn.setAutoCommit(false);
+    try {
+        PreparedStatement st = conn.prepareStatement(
+            "INSERT INTO courses(name) VALUES(?)",
+            Statement.RETURN_GENERATED_KEYS);
+        st.setString(1, "Computer Systems Administration");
+        st.executeUpdate();
+
+        ResultSet keys = st.getGeneratedKeys();
+        keys.next();
+        int courseCode = keys.getInt(1);
+
+        PreparedStatement st2 = conn.prepareStatement(
+            "INSERT INTO subjects(name, year, course) VALUES (?, ?, ?)");
+        st2.setString(1, "CyberSecurity");
+        st2.setInt(2, 2);
+        st2.setInt(3, courseCode);
+        st2.executeUpdate();
+
+        conn.commit();
+    }
+    catch (SQLException ex) {
+        conn.rollback();
+    }
+}</code></pre>
+        </div>
+        <div class="alert alert-info">
+          <span class="alert-icon">🔵</span>
+          <div><strong>INFORMACIÓN ADICIONAL</strong><code>Statement.RETURN_GENERATED_KEYS</code> permite recuperar las claves autogeneradas (normalmente <code>SERIAL</code>) tras un INSERT.</div>
+        </div>
+
+        <div class="diagram-card">
+          <div class="mermaid">
+sequenceDiagram
+    participant App as Aplicacion Java
+    participant Conn as Connection
+    participant DB as PostgreSQL
+    App->>Conn: setAutoCommit(false)
+    App->>Conn: executeUpdate (INSERT curso)
+    Conn->>DB: Ejecuta sentencia
+    App->>Conn: executeUpdate (INSERT asignatura)
+    Conn->>DB: Ejecuta sentencia
+    alt Todo correcto
+        App->>Conn: commit()
+        Conn->>DB: Confirma cambios permanentes
+    else Error detectado
+        App->>Conn: rollback()
+        Conn->>DB: Deshace todos los cambios
+    end
+          </div>
+          <div class="diagram-caption">Fig. 9.2 — Ciclo de una transacción en JDBC</div>
+        </div>
+      </div>
+
+      <div class="summary-box">
+        <h4>📋 Resumen del Capítulo 9</h4>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Concepto</th><th>SQL</th><th>Método JDBC</th></tr></thead>
+          <tbody>
+            <tr><td>Confirmar cambios</td><td><code>COMMIT</code></td><td><code>conn.commit()</code></td></tr>
+            <tr><td>Deshacer cambios</td><td><code>ROLLBACK</code></td><td><code>conn.rollback()</code></td></tr>
+            <tr><td>Desactivar auto-commit</td><td>—</td><td><code>conn.setAutoCommit(false)</code></td></tr>
+            <tr><td>Recuperar claves generadas</td><td>—</td><td><code>Statement.RETURN_GENERATED_KEYS</code></td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="activity-box">
+        <h4>🎯 Actividades Propuestas</h4>
+        <ol>
+          <li>Con <code>employees</code>, crear una app Java que inserte un empleado en un departamento (creándolo si no existe) de forma <strong>transaccional</strong>.</li>
+        </ol>
+      </div>
+
+      <div class="quiz-section">
+        <h3>Cuestionario de Autoevaluación — Capítulo 9</h3>
+        <div class="quiz-grid">
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">1</span>¿Qué significan las siglas ACID?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Atomicity, Consistency, Isolation, Durability.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">2</span>Explica el "Aislamiento" (Isolation).</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Cada transacción se ejecuta como si fuera la única, sin verse afectada por otras concurrentes.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">3</span>Sentencia que confirma permanentemente los cambios.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>COMMIT</code>.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">4</span>Sentencia que deshace cambios no confirmados.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>ROLLBACK</code>.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">5</span>Modo de confirmación por defecto en JDBC.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Auto-commit activado (true): cada sentencia se confirma automáticamente.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">6</span>Método para desactivar auto-commit.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>conn.setAutoCommit(false)</code>.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">7</span>¿Para qué sirve RETURN_GENERATED_KEYS?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Recupera las claves autogeneradas (ej. SERIAL) tras un INSERT.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">8</span>Riesgo sin transacción en el ejemplo bancario.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>El dinero podría perderse: restarse de una cuenta sin sumarse en la otra.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">9</span>Nombre de un SGBD que soporta transacciones.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>"Transaccional".</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">10</span>Bloque Java típico para capturar errores y hacer rollback.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>try { ... } catch (SQLException ex) { conn.rollback(); }</code></p></details></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================
+         PARTE V
+    ======================================================= -->
+    <div class="part-divider"><span class="num">V</span><h2>Administración y Herramientas</h2></div>
+
+    <!-- ===================== CAPÍTULO 10 ===================== -->
+    <section class="chapter" id="cap10">
+      <div class="chapter-header">
+        <div class="chap-num">10</div>
+        <div><h2>Herramientas Gráficas: PgAdmin4 e IntelliJ IDEA</h2>
+        <p>Administración visual sin perder de vista el SQL subyacente</p></div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">10.1. PgAdmin4</h3>
+        <p><strong>PgAdmin4</strong> es la herramienta gráfica oficial de administración de PostgreSQL. Permite crear y administrar bases de datos, ejecutar SQL con el <strong>Query Tool</strong>, y crear funciones mediante asistentes visuales (pestañas <em>General, Definition, Code, Options, Parameters, Security, SQL</em>).</p>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">10.2. Gestión desde IntelliJ IDEA</h3>
+        <p>El <strong>IDE</strong> (<em>Integrated Development Environment</em> — Entorno de Desarrollo Integrado) <strong>IntelliJ IDEA</strong> incorpora la ventana <strong>Database</strong>, que permite conectar con prácticamente cualquier SGBD sin salir del entorno de programación.</p>
+        <ol>
+          <li>Abrir la ventana <strong>Database</strong> → pulsar <code>+</code>.</li>
+          <li>Elegir <code>Data Source → PostgreSQL</code>.</li>
+          <li>Rellenar host, puerto, usuario, contraseña y nombre de BD.</li>
+          <li>Explorar esquemas, tablas, rutinas y secuencias.</li>
+          <li>Crear tablas/vistas/procedimientos desde el menú contextual.</li>
+          <li>Usar la <strong>Query Console</strong> para lanzar SQL directamente.</li>
+        </ol>
+
+        <div class="diagram-card">
+          <div class="mermaid">
+flowchart LR
+    A[Abrir ventana Database] --> B[Pulsar +]
+    B --> C[Elegir Data Source - PostgreSQL]
+    C --> D[Introducir credenciales]
+    D --> E[Explorar esquemas-tablas-rutinas]
+    E --> F[Query Console: ejecutar SQL]
+    E --> G[Crear tablas-vistas-procedimientos]
+          </div>
+          <div class="diagram-caption">Fig. 10.1 — Flujo de trabajo con la ventana Database de IntelliJ IDEA</div>
+        </div>
+        <div class="alert alert-success">
+          <span class="alert-icon">🟢</span>
+          <div><strong>BUENA PRÁCTICA</strong>Usar la integración de base de datos del IDE agiliza el ciclo de desarrollo al inspeccionar el esquema sin cambiar de aplicación.</div>
+        </div>
+      </div>
+
+      <div class="summary-box">
+        <h4>📋 Resumen del Capítulo 10</h4>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Herramienta</th><th>Uso principal</th></tr></thead>
+          <tbody>
+            <tr><td>PgAdmin4</td><td>Administración completa y nativa</td></tr>
+            <tr><td>IntelliJ IDEA (Database)</td><td>Gestión integrada durante el desarrollo</td></tr>
+            <tr><td>Query Tool / Console</td><td>Ejecución directa de SQL</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="quiz-section">
+        <h3>Cuestionario de Autoevaluación — Capítulo 10</h3>
+        <div class="quiz-grid">
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">1</span>¿Qué es PgAdmin4?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>La herramienta gráfica oficial de administración de PostgreSQL.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">2</span>Pestañas del asistente de funciones en PgAdmin4.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>General, Definition, Code, Options, Parameters, Security y SQL.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">3</span>¿Qué significan las siglas IDE?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Integrated Development Environment (Entorno de Desarrollo Integrado).</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">4</span>Ventana de IntelliJ IDEA para bases de datos.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>La ventana <strong>Database</strong>.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">5</span>Botón para añadir una nueva conexión.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>El botón <code>+</code>.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">6</span>Ventaja de gestionar la BD desde el IDE.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Inspeccionar y modificar el esquema sin cambiar de aplicación mientras se programa.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">7</span>Herramienta de PgAdmin4 para ejecutar SQL.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>El Query Tool.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">8</span>¿Se pueden crear tablas sin escribir SQL en IntelliJ?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Sí, mediante el menú contextual New → Table.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">9</span>Información requerida al configurar una conexión.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Host, puerto, usuario, contraseña y nombre de la base de datos.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">10</span>Nombre de la consola SQL en IntelliJ IDEA.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Query Console.</p></details></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== CAPÍTULO 11 ===================== -->
+    <section class="chapter" id="cap11">
+      <div class="chapter-header">
+        <div class="chap-num">11</div>
+        <div><h2>Seguridad, Rendimiento y Buenas Prácticas Profesionales</h2>
+        <p>Checklist final antes de llevar tu código a producción</p></div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">11.1. Prevención de inyección SQL</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">Java — VULNERABLE</span></div>
+          <pre><code>// NUNCA concatenar directamente la entrada del usuario
+String sql = "SELECT * FROM users WHERE name = '" + userInput + "'";
+// Si userInput = ' OR '1'='1  -> devuelve TODOS los registros</code></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">Java — SEGURO</span></div>
+          <pre><code>PreparedStatement ps = conn.prepareStatement("SELECT * FROM users WHERE name = ?");
+ps.setString(1, userInput);</code></pre>
+        </div>
+        <div class="alert alert-danger">
+          <span class="alert-icon">🔴</span>
+          <div><strong>CRÍTICO</strong>La inyección SQL es una de las vulnerabilidades más comunes y peligrosas en aplicaciones de datos. Nunca confíes en la entrada del usuario sin parametrizar.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">11.2. Checklist de buenas prácticas</h3>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Buena práctica</th><th>Motivo</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Usar <code>PreparedStatement</code></td><td>Previene inyección SQL</td></tr>
+            <tr><td>2</td><td>Cerrar recursos (<em>try-with-resources</em>)</td><td>Evita fugas de conexiones</td></tr>
+            <tr><td>3</td><td>Usar transacciones en operaciones relacionadas</td><td>Garantiza consistencia ACID</td></tr>
+            <tr><td>4</td><td>Procedimientos almacenados para lógica compleja</td><td>Mejora seguridad y rendimiento</td></tr>
+            <tr><td>5</td><td>Indexar columnas usadas en WHERE/JOIN</td><td>Mejora rendimiento de consultas</td></tr>
+            <tr><td>6</td><td>No almacenar contraseñas en texto plano</td><td>Seguridad de credenciales</td></tr>
+            <tr><td>7</td><td>Validar restricciones a nivel de BD</td><td>Integridad independiente de la app</td></tr>
+            <tr><td>8</td><td>Usar vistas para consultas repetitivas</td><td>Abstracción y mantenibilidad</td></tr>
+            <tr><td>9</td><td>Evitar <code>SELECT *</code> en producción</td><td>Rendimiento y claridad</td></tr>
+            <tr><td>10</td><td>Documentar procedimientos y esquemas</td><td>Mantenibilidad a largo plazo</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">11.3. Rendimiento básico</h3>
+        <ul>
+          <li>Los <strong>índices</strong> aceleran lecturas, pero ralentizan ligeramente las escrituras.</li>
+          <li>Evitar transacciones demasiado largas: bloquean recursos y afectan la concurrencia.</li>
+          <li>Usar <code>EXPLAIN ANALYZE</code> para estudiar el plan de ejecución antes de optimizar.</li>
+        </ul>
+        <div class="code-block">
+          <div class="code-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-lang">SQL</span></div>
+          <pre><code>EXPLAIN ANALYZE SELECT * FROM subjects WHERE year = 1;</code></pre>
+        </div>
+
+        <div class="diagram-card">
+          <div class="mermaid">
+graph TD
+    A[Seguridad: PreparedStatement, validacion] --> B[Integridad: Constraints, Transacciones ACID]
+    B --> C[Rendimiento: Indices, EXPLAIN]
+    C --> D[Mantenibilidad: Vistas, Procedimientos, Documentacion]
+          </div>
+          <div class="diagram-caption">Fig. 11.1 — Pirámide de buenas prácticas</div>
+        </div>
+      </div>
+
+      <div class="summary-box">
+        <h4>📋 Resumen del Capítulo 11</h4>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Riesgo</th><th>Mitigación</th></tr></thead>
+          <tbody>
+            <tr><td>Inyección SQL</td><td>PreparedStatement / CallableStatement</td></tr>
+            <tr><td>Fugas de conexión</td><td>try-with-resources / DbUtils</td></tr>
+            <tr><td>Inconsistencia de datos</td><td>Transacciones ACID</td></tr>
+            <tr><td>Consultas lentas</td><td>Índices + EXPLAIN ANALYZE</td></tr>
+            <tr><td>Código no mantenible</td><td>Vistas y procedimientos documentados</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="quiz-section">
+        <h3>Cuestionario de Autoevaluación — Capítulo 11</h3>
+        <div class="quiz-grid">
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">1</span>¿Qué es la inyección SQL?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Técnica de ataque que introduce código SQL malicioso a través de entradas no validadas.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">2</span>Objeto JDBC que previene la inyección SQL.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>PreparedStatement (y CallableStatement).</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">3</span>Ejemplo de entrada maliciosa.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>' OR '1'='1</code>.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">4</span>Comando para analizar el plan de ejecución.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p><code>EXPLAIN</code> o <code>EXPLAIN ANALYZE</code>.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">5</span>¿Por qué evitar SELECT * en producción?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Recupera columnas innecesarias, afecta rendimiento y dificulta mantenimiento.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">6</span>Ventaja de mantenibilidad de las vistas.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Abstraen consultas complejas reutilizables, facilitando cambios futuros.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">7</span>¿Qué pasa si una transacción dura demasiado?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Puede bloquear recursos compartidos, afectando concurrencia y rendimiento.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">8</span>¿Dónde aplicar restricciones de integridad?</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>En ambos niveles: aplicación y base de datos.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">9</span>Dos buenas prácticas de cierre de recursos.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>try-with-resources y/o Apache Commons DbUtils.</p></details></div>
+          <div class="quiz-item"><p class="quiz-question"><span class="q-num">10</span>Relación entre índices y rendimiento de escritura.</p><details class="quiz-answer"><summary>Ver respuesta</summary><p>Los índices aceleran lecturas pero ralentizan ligeramente INSERT/UPDATE/DELETE.</p></details></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================
+         CIERRE
+    ======================================================= -->
+    <div class="part-divider"><span class="num">⚑</span><h2>Cierre del Manual</h2></div>
+
+    <!-- ===================== CAPÍTULO 12 — GLOSARIO ===================== -->
+    <section class="chapter" id="cap12">
+      <div class="chapter-header">
+        <div class="chap-num">12</div>
+        <div><h2>Glosario General de Términos</h2>
+        <p>Todos los acrónimos expandidos, ordenados alfabéticamente</p></div>
+      </div>
+
+      <div class="card">
+        <div class="glossary-search">
+          <input type="text" id="glossaryFilter" placeholder="🔎 Filtrar término del glosario (ej: JDBC, ACID, VIEW)...">
+        </div>
+        <div class="table-wrap">
+        <table id="glossaryTable">
+          <thead><tr><th style="width:18%">Término</th><th>Definición</th></tr></thead>
+          <tbody>
+            <tr><td><span class="glossary-letter">A</span><strong>ACID</strong></td><td><em>Atomicity, Consistency, Isolation, Durability</em> (Atomicidad, Consistencia, Aislamiento, Durabilidad) — propiedades que garantizan transacciones fiables.</td></tr>
+            <tr><td><span class="glossary-letter">A</span><strong>API</strong></td><td><em>Application Programming Interface</em> (Interfaz de Programación de Aplicaciones) — reglas que permiten a dos programas comunicarse.</td></tr>
+            <tr><td><span class="glossary-letter">A</span><strong>Array</strong></td><td>Tipo de dato que almacena una colección ordenada de valores en una sola columna.</td></tr>
+            <tr><td><span class="glossary-letter">A</span><strong>Atomicidad</strong></td><td>Propiedad ACID que exige que una transacción se ejecute completamente o no se ejecute en absoluto.</td></tr>
+            <tr><td><span class="glossary-letter">A</span><strong>Auto-commit</strong></td><td>Modo de JDBC en el que cada sentencia se confirma automáticamente de forma individual.</td></tr>
+            <tr><td><span class="glossary-letter">C</span><strong>CallableStatement</strong></td><td>Interfaz JDBC usada para invocar procedimientos y funciones almacenadas.</td></tr>
+            <tr><td><span class="glossary-letter">C</span><strong>Cast</strong></td><td>Conversión explícita o implícita de un tipo de dato a otro.</td></tr>
+            <tr><td><span class="glossary-letter">C</span><strong>Clave foránea (FK)</strong></td><td><em>Foreign Key</em> — columna que referencia la clave primaria de otra tabla, garantizando integridad referencial.</td></tr>
+            <tr><td><span class="glossary-letter">C</span><strong>Clave primaria (PK)</strong></td><td><em>Primary Key</em> — columna(s) que identifican de forma única cada fila de una tabla.</td></tr>
+            <tr><td><span class="glossary-letter">C</span><strong>COMMIT</strong></td><td>Sentencia SQL que confirma de forma permanente los cambios de una transacción.</td></tr>
+            <tr><td><span class="glossary-letter">C</span><strong>Composite Type</strong></td><td>Tipo compuesto — estructura definida por una lista de campos con sus tipos, similar a una fila.</td></tr>
+            <tr><td><span class="glossary-letter">C</span><strong>Conector (Driver)</strong></td><td>Software que permite a una aplicación comunicarse con un SGBD específico.</td></tr>
+            <tr><td><span class="glossary-letter">C</span><strong>Connection</strong></td><td>Objeto JDBC que representa una sesión activa con la base de datos.</td></tr>
+            <tr><td><span class="glossary-letter">C</span><strong>Consistencia</strong></td><td>Propiedad ACID que garantiza que la base de datos pase de un estado válido a otro.</td></tr>
+            <tr><td><span class="glossary-letter">C</span><strong>CRUD</strong></td><td><em>Create, Read, Update, Delete</em> (Crear, Leer, Actualizar, Eliminar) — las cuatro operaciones básicas de persistencia.</td></tr>
+            <tr><td><span class="glossary-letter">D</span><strong>DBMS / SGBD</strong></td><td><em>Database Management System</em> / Sistema de Gestión de Bases de Datos — software que administra el acceso a los datos.</td></tr>
+            <tr><td><span class="glossary-letter">D</span><strong>DCL</strong></td><td><em>Data Control Language</em> (Lenguaje de Control de Datos) — subconjunto SQL para permisos (GRANT, REVOKE).</td></tr>
+            <tr><td><span class="glossary-letter">D</span><strong>DDL</strong></td><td><em>Data Definition Language</em> (Lenguaje de Definición de Datos) — subconjunto SQL para definir estructuras.</td></tr>
+            <tr><td><span class="glossary-letter">D</span><strong>DML</strong></td><td><em>Data Manipulation Language</em> (Lenguaje de Manipulación de Datos) — subconjunto SQL para manejar datos.</td></tr>
+            <tr><td><span class="glossary-letter">D</span><strong>Dominio (DOMAIN)</strong></td><td>Tipo de dato definido por el usuario basado en otro tipo, con restricciones opcionales.</td></tr>
+            <tr><td><span class="glossary-letter">D</span><strong>DriverManager</strong></td><td>Clase de JDBC encargada de gestionar los drivers registrados y crear conexiones.</td></tr>
+            <tr><td><span class="glossary-letter">D</span><strong>Durabilidad</strong></td><td>Propiedad ACID que garantiza que los cambios confirmados persistan ante fallos del sistema.</td></tr>
+            <tr><td><span class="glossary-letter">E</span><strong>Enum (tipo enumerado)</strong></td><td>Tipo de dato que define un conjunto fijo y ordenado de valores posibles.</td></tr>
+            <tr><td><span class="glossary-letter">F</span><strong>Función (Stored Function)</strong></td><td>Rutina almacenada en la base de datos que obligatoriamente devuelve un valor.</td></tr>
+            <tr><td><span class="glossary-letter">I</span><strong>IDE</strong></td><td><em>Integrated Development Environment</em> (Entorno de Desarrollo Integrado), como IntelliJ IDEA.</td></tr>
+            <tr><td><span class="glossary-letter">I</span><strong>Índice (INDEX)</strong></td><td>Estructura auxiliar que acelera la búsqueda de filas en una tabla.</td></tr>
+            <tr><td><span class="glossary-letter">I</span><strong>Inyección SQL</strong></td><td>Ataque que introduce código SQL malicioso a través de entradas no validadas.</td></tr>
+            <tr><td><span class="glossary-letter">I</span><strong>Aislamiento (Isolation)</strong></td><td>Propiedad ACID que garantiza que las transacciones concurrentes no se interfieran entre sí.</td></tr>
+            <tr><td><span class="glossary-letter">J</span><strong>JDBC</strong></td><td><em>Java Database Connectivity</em> (Conectividad a Bases de Datos desde Java) — API estándar de Java para acceder a bases de datos.</td></tr>
+            <tr><td><span class="glossary-letter">J</span><strong>JOIN</strong></td><td>Operación SQL que combina filas de dos o más tablas según una condición de relación.</td></tr>
+            <tr><td><span class="glossary-letter">J</span><strong>JVM</strong></td><td><em>Java Virtual Machine</em> (Máquina Virtual de Java) — entorno de ejecución de programas Java.</td></tr>
+            <tr><td><span class="glossary-letter">O</span><strong>ODBC</strong></td><td><em>Open Database Connectivity</em> (Conectividad Abierta a Bases de Datos) — estándar usado en C, C++, C#, Visual Basic.</td></tr>
+            <tr><td><span class="glossary-letter">O</span><strong>OODBMS</strong></td><td><em>Object-Oriented Database Management System</em> (Sistema de Gestión de Bases de Datos Orientado a Objetos).</td></tr>
+            <tr><td><span class="glossary-letter">O</span><strong>ORD / ORDBMS</strong></td><td><em>Object-Relational Database (Management System)</em> — Base de Datos (Sistema Gestor) Objeto-Relacional.</td></tr>
+            <tr><td><span class="glossary-letter">P</span><strong>PgAdmin4</strong></td><td>Herramienta gráfica oficial de administración de PostgreSQL.</td></tr>
+            <tr><td><span class="glossary-letter">P</span><strong>PL/pgSQL</strong></td><td><em>Procedural Language/PostgreSQL</em> — lenguaje procedimental propio de PostgreSQL.</td></tr>
+            <tr><td><span class="glossary-letter">P</span><strong>Polimorfismo</strong></td><td>Capacidad de tratar distintos tipos de datos mediante una interfaz común.</td></tr>
+            <tr><td><span class="glossary-letter">P</span><strong>POO</strong></td><td>Programación Orientada a Objetos.</td></tr>
+            <tr><td><span class="glossary-letter">P</span><strong>PostgreSQL / Postgres</strong></td><td>SGBD relacional y objeto-relacional, libre y de código abierto.</td></tr>
+            <tr><td><span class="glossary-letter">P</span><strong>PreparedStatement</strong></td><td>Interfaz JDBC para ejecutar SQL precompilado y parametrizado, resistente a inyección SQL.</td></tr>
+            <tr><td><span class="glossary-letter">P</span><strong>Procedimiento (Stored Procedure)</strong></td><td>Rutina almacenada que no está obligada a devolver un valor.</td></tr>
+            <tr><td><span class="glossary-letter">R</span><strong>RDBMS</strong></td><td><em>Relational Database Management System</em> (Sistema de Gestión de Bases de Datos Relacionales).</td></tr>
+            <tr><td><span class="glossary-letter">R</span><strong>ResultSet</strong></td><td>Objeto JDBC que representa el conjunto de filas devuelto por un SELECT.</td></tr>
+            <tr><td><span class="glossary-letter">R</span><strong>ROLLBACK</strong></td><td>Sentencia SQL que deshace los cambios de una transacción no confirmada.</td></tr>
+            <tr><td><span class="glossary-letter">S</span><strong>Secuencia (SEQUENCE)</strong></td><td>Objeto que genera valores numéricos incrementales, base del tipo SERIAL.</td></tr>
+            <tr><td><span class="glossary-letter">S</span><strong>SERIAL</strong></td><td>Pseudo-tipo de PostgreSQL que crea una secuencia asociada para autoincrementar.</td></tr>
+            <tr><td><span class="glossary-letter">S</span><strong>SQL</strong></td><td><em>Structured Query Language</em> (Lenguaje de Consulta Estructurado).</td></tr>
+            <tr><td><span class="glossary-letter">S</span><strong>Statement</strong></td><td>Interfaz JDBC básica para enviar sentencias SQL estáticas.</td></tr>
+            <tr><td><span class="glossary-letter">T</span><strong>TCL</strong></td><td><em>Transaction Control Language</em> (Lenguaje de Control de Transacciones) — incluye COMMIT y ROLLBACK.</td></tr>
+            <tr><td><span class="glossary-letter">T</span><strong>Transacción</strong></td><td>Unidad lógica de trabajo que se ejecuta de forma íntegra (todo o nada).</td></tr>
+            <tr><td><span class="glossary-letter">T</span><strong>Try-with-resources</strong></td><td>Estructura de Java (desde v7) que cierra automáticamente recursos AutoCloseable.</td></tr>
+            <tr><td><span class="glossary-letter">V</span><strong>Vista (VIEW)</strong></td><td>Consulta almacenada que se comporta como una tabla virtual.</td></tr>
+            <tr><td><span class="glossary-letter">V</span><strong>Vista materializada</strong></td><td>Vista cuyo resultado se almacena físicamente y debe actualizarse de forma explícita.</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <p id="noResults" style="display:none; text-align:center; color:var(--text-muted); padding:16px;">😕 No se encontraron términos que coincidan con tu búsqueda.</p>
+      </div>
+    </section>
+
+    <!-- ===================== CAPÍTULO 13 — RESUMEN EJECUTIVO ===================== -->
+    <section class="chapter" id="cap13">
+      <div class="chapter-header">
+        <div class="chap-num">13</div>
+        <div><h2>Resumen Ejecutivo Final</h2>
+        <p>Las ideas clave de todo el manual, condensadas</p></div>
+      </div>
+
+      <div class="exec-summary">
+        <h3>🎯 Ideas clave que debes recordar</h3>
+        <ol class="exec-list">
+          <li><strong>PostgreSQL es un RDBMS libre, multiplataforma y extensible</strong> que además ofrece capacidades de <strong>ORDBMS</strong>: tipos personalizados, herencia de tablas y polimorfismo controlado.</li>
+          <li><strong>SQL se organiza en subconjuntos claros</strong>: DDL, DML, DCL y TCL. Dominar CREATE, SELECT, INSERT, UPDATE, DELETE, JOIN y funciones de agregación es la base indispensable.</li>
+          <li><strong>Vistas, procedimientos almacenados (PL/pgSQL) y tipos avanzados</strong> acercan la lógica de negocio a los datos, mejorando seguridad, rendimiento y mantenibilidad.</li>
+          <li><strong>La conexión desde Java se realiza mediante JDBC</strong>: registrar el driver, formular la URL y crear la conexión. PreparedStatement y CallableStatement son la barrera principal contra la inyección SQL.</li>
+          <li><strong>Las transacciones (ACID)</strong> garantizan que operaciones compuestas se completen íntegramente o se reviertan por completo.</li>
+          <li><strong>La gestión correcta de recursos</strong> (try-with-resources, DbUtils) previene fugas de memoria y conexiones colgadas.</li>
+          <li><strong>Las herramientas gráficas</strong> (PgAdmin4, IntelliJ IDEA) aceleran el desarrollo, pero el conocimiento profundo de SQL sigue siendo imprescindible.</li>
+        </ol>
+
+        <div class="diagram-card" style="background:rgba(255,255,255,.05); border-color:var(--orange);">
+          <div class="mermaid">
+graph LR
+    A[Fundamentos BD y SGBD] --> B[SQL Esencial: CRUD]
+    B --> C[SQL Avanzado: JOIN, Vistas, Indices]
+    C --> D[PL-pgSQL y Procedimientos]
+    D --> E[PostgreSQL ORDBMS: tipos avanzados]
+    E --> F[JDBC desde Java]
+    F --> G[Transacciones ACID]
+    G --> H[Seguridad y Buenas Practicas]
+    H --> I((Nivel Experto))
+          </div>
+          <div class="diagram-caption" style="color:#C9D4E0;">Fig. 13.1 — Ruta de progresión recomendada</div>
+        </div>
+      </div>
+
+      <div class="final-banner">
+        <h3>🏁 Mensaje Final</h3>
+        <p>Dominar PostgreSQL no consiste solo en memorizar sintaxis SQL, sino en comprender <strong>por qué</strong> existen conceptos como las transacciones, los índices o los procedimientos almacenados: todos resuelven problemas reales de integridad, seguridad y rendimiento.</p>
+      </div>
+    </section>
+
+    <!-- ===================== CAPÍTULO 14 — BIBLIOGRAFÍA ===================== -->
+    <section class="chapter" id="cap14">
+      <div class="chapter-header">
+        <div class="chap-num">14</div>
+        <div><h2>Bibliografía y Recursos Oficiales</h2>
+        <p>Documentación oficial, manuales PDF y fuente académica</p></div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">14.1. Manuales oficiales en PDF (formato A4)</h3>
+        <ul class="biblio-list">
+          <li><span>PostgreSQL 19 Beta 4</span><a href="https://www.postgresql.org/files/documentation/pdf/19/postgresql-19-A4.pdf" target="_blank" rel="noopener"><span class="tag">PDF</span></a></li>
+          <li><span>PostgreSQL 18</span><a href="https://www.postgresql.org/files/documentation/pdf/18/postgresql-18-A4.pdf" target="_blank" rel="noopener"><span class="tag">PDF</span></a></li>
+          <li><span>PostgreSQL 17</span><a href="https://www.postgresql.org/files/documentation/pdf/17/postgresql-17-A4.pdf" target="_blank" rel="noopener"><span class="tag">PDF</span></a></li>
+          <li><span>PostgreSQL 16</span><a href="https://www.postgresql.org/files/documentation/pdf/16/postgresql-16-A4.pdf" target="_blank" rel="noopener"><span class="tag">PDF</span></a></li>
+          <li><span>PostgreSQL 15</span><a href="https://www.postgresql.org/files/documentation/pdf/15/postgresql-15-A4.pdf" target="_blank" rel="noopener"><span class="tag">PDF</span></a></li>
+          <li><span>PostgreSQL 14</span><a href="https://www.postgresql.org/files/documentation/pdf/14/postgresql-14-A4.pdf" target="_blank" rel="noopener"><span class="tag">PDF</span></a></li>
+        </ul>
+        <div class="alert alert-info">
+          <span class="alert-icon">🔵</span>
+          <div><strong>INFORMACIÓN ADICIONAL</strong>Consulta el archivo histórico completo (versiones 8.0 a 13) en: <a href="https://www.postgresql.org/docs/manuals/archive/" target="_blank" rel="noopener">postgresql.org/docs/manuals/archive</a></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">14.2. Documentación online</h3>
+        <ul class="biblio-list">
+          <li><span>PostgreSQL Documentation</span><a href="https://www.postgresql.org/docs/" target="_blank" rel="noopener"><span class="tag">WEB</span></a></li>
+          <li><span>Tutorial oficial</span><a href="https://www.postgresql.org/docs/current/tutorial.html" target="_blank" rel="noopener"><span class="tag">WEB</span></a></li>
+          <li><span>Primeros pasos (Getting Started)</span><a href="https://www.postgresql.org/docs/current/tutorial-start.html" target="_blank" rel="noopener"><span class="tag">WEB</span></a></li>
+          <li><span>Instalación</span><a href="https://www.postgresql.org/docs/current/tutorial-install.html" target="_blank" rel="noopener"><span class="tag">WEB</span></a></li>
+          <li><span>Creación de bases de datos</span><a href="https://www.postgresql.org/docs/current/tutorial-createdb.html" target="_blank" rel="noopener"><span class="tag">WEB</span></a></li>
+          <li><span>Vistas</span><a href="https://www.postgresql.org/docs/current/tutorial-views.html" target="_blank" rel="noopener"><span class="tag">WEB</span></a></li>
+          <li><span>Guía de formatos de documentación</span><a href="https://www.postgresql.org/docs/9.6/docguide.html" target="_blank" rel="noopener"><span class="tag">WEB</span></a></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">14.3. Fuente académica base</h3>
+        <p>García Sevilla, J. R. <em>Unit 3 – Persistence in Databases. Connectors.</em> IES Mare Nostrum. Módulo de Acceso a Datos (Data Access), Ciclo Formativo de Grado Superior en Desarrollo de Aplicaciones Multiplataforma/Web. Licencia Creative Commons BY-NC-SA.</p>
+
+        <h4 class="subtitle">Recursos complementarios</h4>
+        <ul>
+          <li>JDBC Oracle Official Guide.</li>
+          <li>The PostgreSQL™ JDBC Interface (documentación del driver pgJDBC).</li>
+          <li>PostgreSQL JDBC error codes.</li>
+          <li>Documentación de Apache Commons DbUtils.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="site-footer">
+      <p><strong>PostgreSQL Academy</strong> · Manual de Cero a Experto</p>
+      <p>Diseñado con fines didácticos para programadores principiantes.</p>
+      <p class="foot-orange">🐘 PostgreSQL · JDBC · PL/pgSQL · ACID · ORDBMS</p>
+    </footer>
+
+  </main>
+</div>
+
+<!-- BOTÓN VOLVER ARRIBA -->
+<button id="backToTop" aria-label="Volver arriba">↑</button>
+
+<script>
+/* ============================================================
+   1. INICIALIZACIÓN DE MERMAID (tema personalizado Amazon)
+   ============================================================ */
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'base',
+  themeVariables: {
+    primaryColor: '#232F3E',
+    primaryTextColor: '#ffffff',
+    primaryBorderColor: '#FF9900',
+    lineColor: '#FF9900',
+    secondaryColor: '#FF9900',
+    tertiaryColor: '#EFF2F6',
+    fontSize: '12px',
+    nodeTextColor: '#ffffff'
+  },
+  flowchart: { curve: 'basis' },
+  securityLevel: 'loose'
+});
+
+/* ============================================================
+   2. BARRA DE PROGRESO DE SCROLL
+   ============================================================ */
+const progressBar = document.getElementById('progressBar');
+function updateProgress(){
+  const scrollTop = window.scrollY;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+  progressBar.style.width = pct + '%';
+}
+window.addEventListener('scroll', updateProgress);
+updateProgress();
+
+/* ============================================================
+   3. BOTÓN VOLVER ARRIBA
+   ============================================================ */
+const backToTop = document.getElementById('backToTop');
+window.addEventListener('scroll', () => {
+  backToTop.style.display = window.scrollY > 500 ? 'block' : 'none';
+});
+backToTop.addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+/* ============================================================
+   4. TOGGLE SIDEBAR EN MÓVIL
+   ============================================================ */
+const sidebar = document.getElementById('sidebar');
+const menuToggle = document.getElementById('menuToggle');
+menuToggle.addEventListener('click', () => {
+  sidebar.classList.toggle('open');
+});
+document.addEventListener('click', (e) => {
+  if (window.innerWidth <= 860 && sidebar.classList.contains('open')) {
+    if (!sidebar.contains(e.target) && e.target !== menuToggle) {
+      sidebar.classList.remove('open');
+    }
+  }
+});
+
+/* ============================================================
+   5. ACORDEÓN DE PARTES EN EL SIDEBAR
+   ============================================================ */
+document.querySelectorAll('.toc-part-title').forEach(btn => {
+  btn.addEventListener('click', () => {
+    btn.parentElement.classList.toggle('collapsed');
+  });
+});
+
+/* ============================================================
+   6. SCROLLSPY — RESALTAR SECCIÓN ACTIVA EN EL SIDEBAR
+   ============================================================ */
+const sections = document.querySelectorAll('section.chapter, section.hero');
+const navLinks = document.querySelectorAll('.sidebar-nav a');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.getAttribute('id');
+      navLinks.forEach(link => {
+        link.classList.toggle('active', link.getAttribute('data-target') === id);
+      });
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+
+sections.forEach(sec => observer.observe(sec));
+
+/* Cerrar sidebar en móvil al hacer clic en un enlace */
+navLinks.forEach(link => {
+  link.addEventListener('click', () => {
+    if (window.innerWidth <= 860) sidebar.classList.remove('open');
+  });
+});
+
+/* ============================================================
+   7. BUSCADOR EN VIVO (filtra tarjetas de contenido)
+   ============================================================ */
+const liveSearch = document.getElementById('liveSearch');
+liveSearch.addEventListener('input', () => {
+  const term = liveSearch.value.trim().toLowerCase();
+  const cards = document.querySelectorAll('.content .card, .content .activity-box, .content .summary-box');
+
+  if (term.length < 2) {
+    cards.forEach(c => c.classList.remove('hidden-by-search'));
+    return;
+  }
+
+  cards.forEach(card => {
+    const text = card.textContent.toLowerCase();
+    card.classList.toggle('hidden-by-search', !text.includes(term));
+  });
+});
+
+/* ============================================================
+   8. FILTRO DEL GLOSARIO
+   ============================================================ */
+const glossaryFilter = document.getElementById('glossaryFilter');
+const glossaryRows = document.querySelectorAll('#glossaryTable tbody tr');
+const noResults = document.getElementById('noResults');
+
+glossaryFilter.addEventListener('input', () => {
+  const term = glossaryFilter.value.trim().toLowerCase();
+  let visibleCount = 0;
+  glossaryRows.forEach(row => {
+    const match = row.textContent.toLowerCase().includes(term);
+    row.style.display = match ? '' : 'none';
+    if (match) visibleCount++;
+  });
+  noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+});
+</script>
+
+</body>
+</html>
