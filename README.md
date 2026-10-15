@@ -2,6 +2,9 @@
 ## De Cero a Experto — Edición para Programadores Principiantes
 
 ---
+## 🔗 Versión Web HTML Navegable: 🪄 https://metb2627.github.io/PostgreSQL-gu-a-desde-cero/
+
+---
 
 > **Nota de diseño del documento**
 > Este manual ha sido maquetado conceptualmente siguiendo una línea editorial profesional inspirada en la paleta **Amazon** (🟦 azul marino oscuro `#131921` / `#232F3E` para encabezados y estructura, 🟧 naranja `#FF9900` para acentos, alertas y botones de acción).
