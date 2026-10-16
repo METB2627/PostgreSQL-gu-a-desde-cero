@@ -6,23 +6,8 @@
 
 ---
 
-> **Nota de diseño del documento**
-> Este manual ha sido maquetado conceptualmente siguiendo una línea editorial profesional inspirada en la paleta **Amazon** (🟦 azul marino oscuro `#131921` / `#232F3E` para encabezados y estructura, 🟧 naranja `#FF9900` para acentos, alertas y botones de acción).
->
-> **Especificaciones tipográficas aplicadas** (para exportación a Word/PDF):
-> | Elemento | Tamaño | Estilo |
-> |---|---|---|
-> | Título del manual | 16 pt | Negrita, azul marino |
-> | Título 1 (Capítulo) | 14 pt | Negrita, azul marino, borde inferior naranja |
-> | Título 2 (Sección) | 12 pt | Negrita, azul marino |
-> | Subtítulo | 11 pt | Semi-negrita, gris oscuro |
-> | Texto normal | 10 pt | Regular, interlineado sencillo |
-> | Espaciado | Automático anterior | Sin espacio manual añadido |
->
 > **Indicadores de criticidad** usados en todo el manual:
 > 🟢 **BUENA PRÁCTICA** · 🟡 **ATENCIÓN** · 🔴 **CRÍTICO / ERROR COMÚN** · 🔵 **INFORMACIÓN ADICIONAL**
->
-> Las imágenes del manual se presentan como **diagramas vectoriales esquemáticos** (notación Mermaid/ASCII-art) para garantizar legibilidad en cualquier visor Markdown y máxima nitidez a cualquier tamaño de pantalla.
 
 ---
 
