@@ -2,7 +2,7 @@
 ## De Cero a Experto — Edición para Programadores Principiantes
 
 ---
-## 🔗 Versión Web HTML Navegable: 🪄 https://metb2627.github.io/PostgreSQL-gu-a-desde-cero/
+### 🔗 Versión Web HTML Navegable: 🪄 https://metb2627.github.io/PostgreSQL-gu-a-desde-cero/
 
 ---
 
